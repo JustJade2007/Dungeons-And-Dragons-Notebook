@@ -1,10 +1,10 @@
 @echo off
 setlocal enabledelayedexpansion
-title Dungeons & Dragons Notebook - Build Executable
+title Dungeons ^& Dragons Notebook - Build Executable
 cd /d "%~dp0"
 
 echo ===================================================
-echo     D&D Notebook - Building Standalone EXE
+echo     D^&D Notebook - Building Standalone EXE
 echo ===================================================
 echo.
 

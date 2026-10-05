@@ -91,7 +91,19 @@ try {
   if (fs.existsSync(seaBlobPath)) fs.unlinkSync(seaBlobPath);
 } catch (e) {}
 
+// 7. Verify & Finalize Executable Features
+console.log('[6/6] Finalizing & Verifying all features against the standalone executable...');
+try {
+  execSync(`node "${path.join(projectRoot, 'tests', 'verify-exe.js')}"`, {
+    stdio: 'inherit',
+    cwd: projectRoot
+  });
+} catch (err) {
+  console.error('[Error] Executable feature verification test suite failed:', err.message);
+  process.exit(1);
+}
+
 console.log('===================================================');
-console.log('  SUCCESS! Standalone Executable Created at:');
+console.log('  SUCCESS! Standalone Executable Finalized & Verified:');
 console.log(`  ${exePath}`);
 console.log('===================================================');

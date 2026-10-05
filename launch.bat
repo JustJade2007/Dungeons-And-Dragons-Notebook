@@ -1,10 +1,10 @@
 @echo off
 setlocal enabledelayedexpansion
-title Dungeons & Dragons Notebook
+title Dungeons ^& Dragons Notebook
 cd /d "%~dp0"
 
 echo ===================================================
-echo     Dungeons & Dragons Notebook - Launcher
+echo     Dungeons ^& Dragons Notebook - Launcher
 echo ===================================================
 echo.
 

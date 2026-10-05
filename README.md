@@ -74,8 +74,10 @@ Dungeons & Dragons Notebook helps you organize your games. It keeps track of cam
 
 ### Verification & Testing
 - Run `test-website.bat` to test and launch the Node.js website environment.
-- Run `test-exe.bat` to test and launch the standalone Windows executable.
-- Run `npm test` to execute the automated verification test suite.
+- Run `test-exe.bat` to run the comprehensive feature test suite directly against the standalone Windows executable (`dist/dnd-notebook.exe`).
+- Run `npm test` to execute the Node application verification test suite (`tests/verify-app.js`).
+- Run `npm run test:exe` (or `npm run verify:exe`) to execute the 15-point feature verification suite against the compiled executable (`tests/verify-exe.js`).
+- During executable builds (`npm run build:exe` or `build-exe.bat`), `tests/verify-exe.js` is automatically executed to finalize and certify the binary before distribution.
 
 ---
 
@@ -93,17 +95,20 @@ Dungeons-And-Dragons-Notebook/
 ├── package.json          # Node.js project manifest & scripts
 ├── launch.bat            # Windows launcher script for web dev mode
 ├── build-exe.bat         # Standalone Windows executable build script
+├── test-exe.bat          # Standalone executable feature verification test runner
+├── test-website.bat      # Website test launcher script
 ├── public/               # Frontend user interface assets
-│   ├── index.html        # Single-page application structure
+│   ├── index.html        # Single-page application structure & Home Page gateway
 │   ├── css/
 │   │   └── style.css     # Dark fantasy design system & glassmorphism
 │   └── js/
 │       └── app.js        # Graph canvas, @ mention picker, and state management
 ├── scripts/
-│   └── build-exe.js      # SEA packaging script
+│   └── build-exe.js      # SEA packaging & automated finalization script
 ├── tests/
-│   └── verify-app.js     # Automated verification suite
-└── dist/                 # Compiled Windows executable output
+│   ├── verify-app.js     # Development environment API and UI structure tests
+│   └── verify-exe.js     # Executable finalization 15-point feature verification suite
+└── dist/                 # Compiled Windows executable output (dist/dnd-notebook.exe)
 ```
 
 ---

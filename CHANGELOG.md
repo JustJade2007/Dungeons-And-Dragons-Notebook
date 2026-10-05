@@ -20,7 +20,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - **Tabletop Rule System**: Configurable system selection (D&D 5th Edition, Pathfinder 2e, Daggerheart, OSR / Retro, Call of Cthulhu, Custom System).
   - **Feature Toggles**: Quick checkboxes for enabling DM secret notes/whispers and auto-linking discoveries to the active hero journal.
 - **Home Navigation & Switcher**: Added prominent "🏠 Notebooks / Home" button in the main application header alongside the campaign selector pill, allowing effortless switching back to the Home Page at any time.
-- **Home Visual Style Switcher**: Integrated theme switcher pill directly onto the Home Page header so users can change visual themes prior to entering a notebook.
+- **Executable Finalization Feature Test Suite (`tests/verify-exe.js`)**: Built an automated 15-point end-to-end verification suite that runs directly against the packaged standalone executable (`dist/dnd-notebook.exe`):
+  - Process launch and `/api/health` polling on an isolated test port.
+  - Static asset serving (HTML, CSS, JS) and Home Page gateway structure.
+  - Database zero-entry clean state verification.
+  - DM & Player notebook creation with brief settings (rule system, feature toggles).
+  - Campaign switching and listings.
+  - Entry CRUD across categories with friendliness, status, and parent-child hierarchy.
+  - DM secret notes storage and retrieval.
+  - Cross-referencing `@` mentions, bidirectional connections, and backlink computation.
+  - Adventuring party, player character dossier linking, and family tree lineage modeling.
+  - Temporary scratchpad sessions and notebook conversion migration.
+  - Custom category persistence.
+  - Backup export, database reset, and full restoration import.
+  - Clean teardown to ensure zero test artifacts remain in the user database.
+- **Automated Finalization in `scripts/build-exe.js`**: Step 6/6 now runs `tests/verify-exe.js` to ensure the executable is tested and certified before completing the build.
+- **Enhanced `test-exe.bat`**: Upgraded test runner batch script to execute the comprehensive feature test suite directly against `dist/dnd-notebook.exe`.
 
 ### Fixed
 - Fixed issue where clicking outside the startup modal closed it into an empty campaign state (`activeCampaignId: null`), which caused workspace controls and note creation to become unresponsive.

@@ -8,6 +8,8 @@
     "start": "node server.js",
     "dev": "node server.js",
     "test": "node tests/verify-app.js",
+    "test:exe": "node tests/verify-exe.js",
+    "verify:exe": "node tests/verify-exe.js",
     "build:exe": "node scripts/build-exe.js"
   },
   "dependencies": {
