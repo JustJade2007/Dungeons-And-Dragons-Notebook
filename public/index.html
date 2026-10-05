@@ -14,7 +14,164 @@
   <link rel="stylesheet" href="css/style.css">
 </head>
 <body class="theme-whimsical">
-  <div id="app" class="app-layout">
+  <!-- 1. FULL-PAGE TABLETOP NOTEBOOK HOME (Default Startup Landing Page) -->
+  <div id="homePage" class="home-page-layout">
+    <header class="home-header">
+      <div class="home-brand">
+        <span class="home-brand-icon">
+          <svg viewBox="0 0 24 24" width="28" height="28" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
+          </svg>
+        </span>
+        <div class="home-brand-text">
+          <h1 class="home-brand-title">D&D Notebook</h1>
+          <span class="home-brand-subtitle">Tabletop Campaign Organizer & Lore Codex</span>
+        </div>
+      </div>
+      <div class="home-header-right">
+        <button id="homeThemeSwitcherBtn" class="theme-pill-btn" title="Cycle visual styles">
+          <span id="homeThemeBtnIcon">🍄</span>
+          <span id="homeThemeBtnLabel">Whimsical Fey</span>
+        </button>
+      </div>
+    </header>
+
+    <main class="home-main">
+      <div class="home-hero-banner">
+        <div class="home-hero-badge">✦ Tabletop Campaign Codex ✦</div>
+        <h2 class="home-hero-title">Welcome to Your Tabletop Notebook</h2>
+        <p class="home-hero-subtitle">
+          Every great adventure begins with an open chronicle. Select a saved notebook below, forge a new campaign with custom settings, or launch an instant temporary scratchpad.
+        </p>
+      </div>
+
+      <div class="home-gateway-grid">
+        <!-- 1. Forge New Notebook Card -->
+        <div class="home-card primary-home-card">
+          <div class="home-card-header">
+            <span class="home-card-icon">✨</span>
+            <div>
+              <h3>Forge New Notebook</h3>
+              <p class="home-card-desc">Create a structured campaign notebook with tailored settings.</p>
+            </div>
+          </div>
+
+          <form id="createNotebookForm" class="home-form">
+            <div class="form-group">
+              <label for="newNotebookName">Notebook / Campaign Title <span class="required">*</span></label>
+              <input type="text" id="newNotebookName" placeholder="e.g. Curse of Strahd, Netheril Chronicles" required autocomplete="off">
+            </div>
+
+            <div class="form-group">
+              <label for="newNotebookDesc">Logline / Notes (optional)</label>
+              <input type="text" id="newNotebookDesc" placeholder="e.g. Friday group, Chapter 1" autocomplete="off">
+            </div>
+
+            <!-- Brief Settings: Role & Mode -->
+            <div class="form-group">
+              <label>Role & Notebook Mode <span class="required">*</span></label>
+              <div class="mode-choice-grid">
+                <label class="mode-choice-card active" id="roleChoiceDmLabel">
+                  <input type="radio" name="notebookRoleChoice" value="dm" checked>
+                  <div class="mode-choice-content">
+                    <span class="mode-choice-title">👑 Dungeon Master Mode</span>
+                    <span class="mode-choice-desc">Full campaign control, DM secret notes, world hierarchy & encounter prep.</span>
+                  </div>
+                </label>
+
+                <label class="mode-choice-card" id="roleChoicePlayerLabel">
+                  <input type="radio" name="notebookRoleChoice" value="player">
+                  <div class="mode-choice-content">
+                    <span class="mode-choice-title">🛡️ Player Mode</span>
+                    <span class="mode-choice-desc">Hero journal, active character dossier, automatic discovery linking, DM secrets redacted.</span>
+                  </div>
+                </label>
+              </div>
+            </div>
+
+            <!-- Brief Settings: System & Features -->
+            <div class="home-brief-settings">
+              <div class="form-group">
+                <label for="notebookRuleSystem">Tabletop System</label>
+                <select id="notebookRuleSystem" class="form-select">
+                  <option value="D&D 5e" selected>Dungeons & Dragons 5th Edition</option>
+                  <option value="Pathfinder 2e">Pathfinder 2nd Edition</option>
+                  <option value="Daggerheart">Daggerheart</option>
+                  <option value="OSR / Retro">Old-School Essentials / OSR</option>
+                  <option value="Call of Cthulhu">Call of Cthulhu</option>
+                  <option value="Custom System">Custom / Other System</option>
+                </select>
+              </div>
+
+              <div class="home-feature-toggles">
+                <label class="home-toggle-label">
+                  <input type="checkbox" id="settingEnableSecrets" checked>
+                  <span>Enable DM Secret Notes & Whispers</span>
+                </label>
+                <label class="home-toggle-label">
+                  <input type="checkbox" id="settingAutoLink" checked>
+                  <span>Auto-link discoveries to active hero journal</span>
+                </label>
+              </div>
+            </div>
+
+            <button type="submit" class="btn btn-primary glow-btn hub-action-btn">
+              <span>Create & Enter Notebook</span>
+              <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none">
+                <path d="M5 12h14M12 5l7 7-7 7"/>
+              </svg>
+            </button>
+          </form>
+        </div>
+
+        <!-- 2. Open Saved Notebook Card -->
+        <div class="home-card saved-home-card">
+          <div class="home-card-header">
+            <span class="home-card-icon">📂</span>
+            <div>
+              <h3>Saved Notebooks</h3>
+              <p class="home-card-desc">Select an existing campaign notebook to resume your notes.</p>
+            </div>
+          </div>
+
+          <div class="saved-notebooks-list" id="savedNotebooksList">
+            <!-- Dynamically populated -->
+          </div>
+        </div>
+
+        <!-- 3. Temporary Scratchpad Card -->
+        <div class="home-card temp-hub-card">
+          <div class="home-card-header">
+            <span class="home-card-icon">⚡</span>
+            <div>
+              <h3>Quick Temporary Notepad</h3>
+              <p class="home-card-desc">Instant note-taking with zero campaign setup required.</p>
+            </div>
+          </div>
+
+          <div class="temp-notepad-intro">
+            <p class="text-sm text-secondary">
+              Need to take immediate session notes or combat logs right now? Launch an instant scratchpad. You can organize, cross-reference, and save all notes to a permanent notebook whenever you are ready.
+            </p>
+            <div class="temp-feature-tags">
+              <span class="temp-tag">⚡ Zero Setup</span>
+              <span class="temp-tag">🔗 Cross-Referencing</span>
+              <span class="temp-tag">💾 Save Anytime</span>
+            </div>
+            <button type="button" id="startTempNotepadBtn" class="btn btn-secondary glow-btn hub-action-btn">
+              <span>Launch Temporary Notepad</span>
+              <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none">
+                <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
+              </svg>
+            </button>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- 2. MAIN APP WORKSPACE (Hidden by default until a notebook is chosen) -->
+  <div id="app" class="app-layout" style="display: none;">
     <!-- Top Navigation Header -->
     <header class="app-header">
       <div class="header-left">
@@ -29,6 +186,15 @@
             <span class="brand-subtitle">Campaign Codex</span>
           </div>
         </div>
+
+        <!-- Return to Home Page / Notebook Switcher Button -->
+        <button id="returnHomeBtn" class="btn btn-outline home-return-btn" title="Return to Notebook Home / Switch Notebooks">
+          <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none">
+            <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+            <polyline points="9 22 9 12 15 12 15 22"/>
+          </svg>
+          <span>Notebooks / Home</span>
+        </button>
 
         <!-- Campaign Selector Badge -->
         <button id="campaignBtn" class="campaign-pill" title="Switch or manage campaigns">
@@ -742,98 +908,7 @@
       </div>
     </div>
 
-    <!-- 3. WELCOME & NOTEBOOK HUB MODAL (Startup / Notebook Selector) -->
-    <div id="welcomeHubModal" class="modal-backdrop" style="display: none;">
-      <div class="modal-dialog modal-lg hub-dialog">
-        <header class="modal-header hub-header">
-          <div class="hub-header-brand">
-            <span class="hub-logo">Codex</span>
-            <div>
-              <h2 class="modal-title">Tabletop Campaign Notebook Hub</h2>
-              <p class="text-sm text-muted">Create or open a dedicated campaign notebook, or start an instant temporary scratchpad.</p>
-            </div>
-          </div>
-          <button class="modal-close-btn" id="closeHubBtn" title="Close" style="display: none;">&times;</button>
-        </header>
-
-        <div class="modal-body hub-body">
-          <div class="hub-grid">
-            <!-- Option 1: Create New Notebook -->
-            <div class="hub-card primary-hub-card">
-              <div class="hub-card-header">
-                <span class="hub-card-icon">✨</span>
-                <h3>Create New Notebook</h3>
-              </div>
-              <p class="hub-card-desc">Start a structured campaign notebook. Choose whether this notebook is for DM campaign oversight or Player character tracking.</p>
-              
-              <form id="createNotebookForm" class="hub-form">
-                <div class="form-group">
-                  <label for="newNotebookName">Notebook / Campaign Title <span class="required">*</span></label>
-                  <input type="text" id="newNotebookName" placeholder="e.g. Curse of Strahd, Netheril Chronicles" required autocomplete="off">
-                </div>
-
-                <div class="form-group">
-                  <label for="newNotebookDesc">Description (optional)</label>
-                  <input type="text" id="newNotebookDesc" placeholder="e.g. Friday group, Chapter 1" autocomplete="off">
-                </div>
-
-                <!-- Notebook Mode Choice: DM vs Player -->
-                <div class="form-group">
-                  <label>Notebook Role & Mode <span class="required">*</span></label>
-                  <div class="mode-choice-grid">
-                    <label class="mode-choice-card active">
-                      <input type="radio" name="notebookRoleChoice" value="dm" checked>
-                      <div class="mode-choice-content">
-                        <span class="mode-choice-title">👑 Dungeon Master Mode</span>
-                        <span class="mode-choice-desc">Full campaign control, DM secret notes, world hierarchy & encounter prep.</span>
-                      </div>
-                    </label>
-
-                    <label class="mode-choice-card">
-                      <input type="radio" name="notebookRoleChoice" value="player">
-                      <div class="mode-choice-content">
-                        <span class="mode-choice-title">🛡️ Player Mode</span>
-                        <span class="mode-choice-desc">Hero journal, active character dossier, automatic discovery linking, DM secrets redacted.</span>
-                      </div>
-                    </label>
-                  </div>
-                </div>
-
-                <button type="submit" class="btn btn-primary glow-btn hub-action-btn">Create & Open Notebook</button>
-              </form>
-            </div>
-
-            <!-- Option 2: Open Existing Notebook -->
-            <div class="hub-card">
-              <div class="hub-card-header">
-                <span class="hub-card-icon">📂</span>
-                <h3>Saved Notebooks</h3>
-              </div>
-              <p class="hub-card-desc">Select an existing campaign notebook to resume your notes.</p>
-              
-              <div class="saved-notebooks-list" id="savedNotebooksList">
-                <!-- Dynamically populated -->
-              </div>
-            </div>
-
-            <!-- Option 3: Temporary Scratchpad -->
-            <div class="hub-card temp-hub-card">
-              <div class="hub-card-header">
-                <span class="hub-card-icon">⚡</span>
-                <h3>Quick Temporary Notepad</h3>
-              </div>
-              <p class="hub-card-desc">Need to take immediate session notes without setting up a campaign? Launch an instant scratchpad. You can convert and save it to a permanent notebook at any time.</p>
-              
-              <div class="temp-hub-action">
-                <button type="button" id="startTempNotepadBtn" class="btn btn-secondary glow-btn hub-action-btn">Launch Temporary Notepad</button>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- 4. SAVE TEMPORARY NOTEPAD MODAL -->
+    <!-- 3. SAVE TEMPORARY NOTEPAD MODAL -->
     <div id="saveTempModal" class="modal-backdrop" style="display: none;">
       <div class="modal-dialog">
         <header class="modal-header">

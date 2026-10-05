@@ -215,13 +215,21 @@
     el.charFormAlignment = document.getElementById('charFormAlignment');
     el.charFormNotes = document.getElementById('charFormNotes');
 
-    el.welcomeHubModal = document.getElementById('welcomeHubModal');
+    el.app = document.getElementById('app');
+    el.homePage = document.getElementById('homePage');
+    el.returnHomeBtn = document.getElementById('returnHomeBtn');
+    el.homeThemeSwitcherBtn = document.getElementById('homeThemeSwitcherBtn');
+    el.homeThemeBtnIcon = document.getElementById('homeThemeBtnIcon');
+    el.homeThemeBtnLabel = document.getElementById('homeThemeBtnLabel');
+
     el.createNotebookForm = document.getElementById('createNotebookForm');
     el.newNotebookName = document.getElementById('newNotebookName');
     el.newNotebookDesc = document.getElementById('newNotebookDesc');
+    el.notebookRuleSystem = document.getElementById('notebookRuleSystem');
+    el.settingEnableSecrets = document.getElementById('settingEnableSecrets');
+    el.settingAutoLink = document.getElementById('settingAutoLink');
     el.savedNotebooksList = document.getElementById('savedNotebooksList');
     el.startTempNotepadBtn = document.getElementById('startTempNotepadBtn');
-    el.closeHubBtn = document.getElementById('closeHubBtn');
 
     el.saveTempModal = document.getElementById('saveTempModal');
     el.saveTempForm = document.getElementById('saveTempForm');
@@ -298,11 +306,11 @@
       });
       return await res.json();
     },
-    async createCampaign(name, description, mode = 'dm', convertTemporary = false) {
+    async createCampaign(name, description, mode = 'dm', system = 'D&D 5e', settings = {}, convertTemporary = false) {
       const res = await fetch('/api/campaigns', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, description, mode, convertTemporary })
+        body: JSON.stringify({ name, description, mode, system, settings, convertTemporary })
       });
       return await res.json();
     },
@@ -354,6 +362,10 @@
     if (el.themeBtnIcon) el.themeBtnIcon.textContent = theme.icon;
     if (el.themeBtnLabel) el.themeBtnLabel.textContent = theme.name;
 
+    // Update Home Header Pill
+    if (el.homeThemeBtnIcon) el.homeThemeBtnIcon.textContent = theme.icon;
+    if (el.homeThemeBtnLabel) el.homeThemeBtnLabel.textContent = theme.name;
+
     // Update Selected Tag in Modal
     if (el.themeSelectCards) {
       el.themeSelectCards.forEach(card => {
@@ -385,7 +397,7 @@
       state.activeCharacterId = data.activeCharacterId || null;
       state.customCategories = data.customCategories || [];
 
-      // Determine notebook mode from active campaign
+      // Determine notebook mode from active campaign if one was stored
       if (state.activeCampaignId === 'temporary') {
         state.currentMode = 'dm';
       } else if (state.activeCampaignId) {
@@ -397,41 +409,59 @@
         }
       }
 
-      // If no notebook is chosen yet, open the Notebook Hub!
-      if (!state.activeCampaignId) {
-        openWelcomeHub(false); // false = cannot close without picking an option
-      } else {
-        closeWelcomeHub();
-      }
-
-      // Select first character if none active
-      if (!state.activeCharacterId && state.characters.length > 0) {
-        state.activeCharacterId = state.characters[0].id;
-      }
-
-      updateUI();
+      // By default on startup: ALWAYS show the dedicated Home Page!
+      // The user MUST choose one of: Create new notebook, Open saved notebook, or Launch temporary notes
+      showHomePage();
     } catch (err) {
       console.error('Failed to load application data:', err);
     }
   }
 
-  // --- WELCOME & NOTEBOOK HUB ---
-  function openWelcomeHub(canClose = true) {
+  // --- FULL-PAGE HOME GATEWAY & WORKSPACE SWITCHING ---
+  function showHomePage() {
     renderSavedNotebooksList();
-    el.closeHubBtn.style.display = canClose ? 'block' : 'none';
-    el.welcomeHubModal.style.display = 'flex';
+    if (el.app) el.app.style.display = 'none';
+    if (el.homePage) el.homePage.style.display = 'flex';
   }
 
-  function closeWelcomeHub() {
-    el.welcomeHubModal.style.display = 'none';
+  async function showWorkspace(campaignId, mode = 'dm') {
+    state.activeCampaignId = campaignId;
+    state.currentMode = mode || 'dm';
+
+    if (campaignId !== 'temporary') {
+      try {
+        await api.switchCampaign(campaignId);
+      } catch (err) {
+        console.warn('Could not persist switch:', err);
+      }
+    }
+
+    // Select character associated with this campaign if available
+    const campChars = state.characters.filter(c => c.campaignId === campaignId);
+    if (campChars.length > 0) {
+      if (!state.activeCharacterId || !campChars.some(c => c.id === state.activeCharacterId)) {
+        state.activeCharacterId = campChars[0].id;
+      }
+    } else {
+      state.activeCharacterId = null;
+    }
+    state.selectedCharacterId = state.activeCharacterId;
+
+    if (el.homePage) el.homePage.style.display = 'none';
+    if (el.app) el.app.style.display = 'flex';
+
+    updateUI();
   }
 
   function renderSavedNotebooksList() {
+    if (!el.savedNotebooksList) return;
     el.savedNotebooksList.innerHTML = '';
     if (state.campaigns.length === 0) {
       el.savedNotebooksList.innerHTML = `
-        <div class="empty-state" style="padding: 20px 10px;">
-          <p class="text-sm text-muted">No saved notebooks found. Create your first notebook on the left!</p>
+        <div class="empty-state" style="padding: 28px 14px; text-align: center;">
+          <div style="font-size: 2rem; margin-bottom: 8px;">📜</div>
+          <p class="text-sm font-semibold text-secondary">No saved notebooks found</p>
+          <p class="text-xs text-muted" style="margin-top: 4px;">Forge your first campaign notebook on the left, or launch an instant temporary notepad.</p>
         </div>
       `;
       return;
@@ -442,29 +472,33 @@
       card.className = 'saved-notebook-card';
       const isDm = (camp.mode || 'dm') === 'dm';
       const entryCount = state.entries.filter(e => e.campaignId === camp.id).length;
+      const charCount = state.characters.filter(c => c.campaignId === camp.id).length;
+      const sys = camp.system || 'D&D 5e';
 
       card.innerHTML = `
         <div class="saved-notebook-info">
           <div class="saved-notebook-title">${escapeHTML(camp.name)}</div>
           <div class="saved-notebook-meta">
             <span class="category-tag ${isDm ? 'cat-quest' : 'cat-location'}">${isDm ? '👑 DM Mode' : '🛡️ Player Mode'}</span>
+            <span class="category-tag cat-faction" style="font-size: 0.65rem;">🎲 ${escapeHTML(sys)}</span>
             <span>${entryCount} entries</span>
+            ${charCount > 0 ? `<span>• ${charCount} heroes</span>` : ''}
             <span>• ${formatRelativeTime(camp.updatedAt || camp.createdAt)}</span>
           </div>
         </div>
         <div class="saved-notebook-actions">
-          <button class="btn btn-xs btn-primary open-camp-btn">Open</button>
+          <button class="btn btn-xs btn-primary open-camp-btn">Open Notebook</button>
           <button class="btn btn-xs btn-danger-ghost delete-camp-btn" title="Delete notebook">&times;</button>
         </div>
       `;
 
-      card.querySelector('.open-camp-btn').addEventListener('click', async (e) => {
+      card.addEventListener('click', () => {
+        showWorkspace(camp.id, camp.mode || 'dm');
+      });
+
+      card.querySelector('.open-camp-btn').addEventListener('click', (e) => {
         e.stopPropagation();
-        await api.switchCampaign(camp.id);
-        state.activeCampaignId = camp.id;
-        state.currentMode = camp.mode || 'dm';
-        closeWelcomeHub();
-        updateUI();
+        showWorkspace(camp.id, camp.mode || 'dm');
       });
 
       card.querySelector('.delete-camp-btn').addEventListener('click', async (e) => {
@@ -476,16 +510,9 @@
           state.characters = state.characters.filter(ch => ch.campaignId !== camp.id);
           if (state.activeCampaignId === camp.id) {
             state.activeCampaignId = null;
-            openWelcomeHub(false);
-          } else {
-            renderSavedNotebooksList();
           }
-          updateUI();
+          renderSavedNotebooksList();
         }
-      });
-
-      card.addEventListener('click', () => {
-        card.querySelector('.open-camp-btn').click();
       });
 
       el.savedNotebooksList.appendChild(card);
@@ -2097,32 +2124,57 @@
       }
     });
 
-    // Notebook Hub & Switcher
-    el.campaignBtn.addEventListener('click', () => openWelcomeHub(Boolean(state.activeCampaignId)));
-    el.closeHubBtn.addEventListener('click', () => closeWelcomeHub());
+    // Navigation: Return to Home / Notebooks
+    if (el.campaignBtn) {
+      el.campaignBtn.addEventListener('click', () => showHomePage());
+    }
+    if (el.returnHomeBtn) {
+      el.returnHomeBtn.addEventListener('click', () => showHomePage());
+    }
+    if (el.homeThemeSwitcherBtn) {
+      el.homeThemeSwitcherBtn.addEventListener('click', () => {
+        el.themeSettingsModal.style.display = 'flex';
+      });
+    }
 
-    // Create Notebook Form (with DM/Player mode choice)
+    // Role choice radio styling & smart toggles
+    document.querySelectorAll('input[name="notebookRoleChoice"]').forEach(radio => {
+      radio.addEventListener('change', () => {
+        document.querySelectorAll('.mode-choice-card').forEach(c => c.classList.remove('active'));
+        radio.closest('.mode-choice-card')?.classList.add('active');
+        if (el.settingEnableSecrets && el.settingAutoLink) {
+          if (radio.value === 'dm') {
+            el.settingEnableSecrets.checked = true;
+            el.settingAutoLink.checked = false;
+          } else {
+            el.settingEnableSecrets.checked = false;
+            el.settingAutoLink.checked = true;
+          }
+        }
+      });
+    });
+
+    // Create Notebook Form (with brief settings: role mode, rule system, feature toggles)
     el.createNotebookForm.addEventListener('submit', async e => {
       e.preventDefault();
       const name = el.newNotebookName.value.trim();
       const desc = el.newNotebookDesc.value.trim();
       const mode = document.querySelector('input[name="notebookRoleChoice"]:checked')?.value || 'dm';
+      const system = el.notebookRuleSystem ? el.notebookRuleSystem.value : 'D&D 5e';
+      const settings = {
+        allowDmSecrets: el.settingEnableSecrets ? el.settingEnableSecrets.checked : true,
+        autoLinkDiscoveries: el.settingAutoLink ? el.settingAutoLink.checked : true
+      };
 
-      const newCamp = await api.createCampaign(name, desc, mode, false);
+      const newCamp = await api.createCampaign(name, desc, mode, system, settings, false);
       state.campaigns.push(newCamp);
-      state.activeCampaignId = newCamp.id;
-      state.currentMode = mode;
       el.createNotebookForm.reset();
-      closeWelcomeHub();
-      updateUI();
+      showWorkspace(newCamp.id, mode);
     });
 
     // Start Temporary Scratchpad
     el.startTempNotepadBtn.addEventListener('click', () => {
-      state.activeCampaignId = 'temporary';
-      state.currentMode = 'dm';
-      closeWelcomeHub();
-      updateUI();
+      showWorkspace('temporary', 'dm');
     });
 
     // Save Temporary Scratchpad as Permanent Notebook
@@ -2133,7 +2185,7 @@
     });
 
     el.exitTempNotepadBtn.addEventListener('click', () => {
-      openWelcomeHub(true);
+      showHomePage();
     });
 
     el.saveTempForm.addEventListener('submit', async e => {
@@ -2142,14 +2194,15 @@
       const desc = el.saveTempDesc.value.trim();
       const mode = document.querySelector('input[name="saveTempModeChoice"]:checked')?.value || 'dm';
 
-      const newCamp = await api.createCampaign(name, desc, mode, true);
+      const newCamp = await api.createCampaign(name, desc, mode, 'D&D 5e', {}, true);
       state.campaigns.push(newCamp);
-      state.activeCampaignId = newCamp.id;
-      state.currentMode = mode;
       el.saveTempModal.style.display = 'none';
 
-      // Reload data to reflect converted entries
-      await loadInitialData();
+      // Reload data to reflect converted entries and enter workspace
+      const refreshed = await api.fetchAllData();
+      state.entries = refreshed.entries || [];
+      state.characters = refreshed.characters || [];
+      showWorkspace(newCamp.id, mode);
     });
 
     // Custom Category Form

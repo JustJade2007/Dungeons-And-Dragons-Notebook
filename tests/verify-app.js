@@ -85,29 +85,33 @@ async function runTests() {
     const initData = await request('GET', '/api/data');
     console.log(`Checking initial database: ${initData.body.entries.length} entries, ${initData.body.campaigns.length} notebooks.`);
 
-    // 2. Test Creating DM Notebook
+    // 2. Test Creating DM Notebook with Brief Settings (rule system, feature toggles)
     const dmCampRes = await request('POST', '/api/campaigns', {
       name: 'Netheril Campaign',
       description: 'Ancient empire secrets',
-      mode: 'dm'
+      mode: 'dm',
+      system: 'D&D 5e',
+      settings: { allowDmSecrets: true, autoLinkDiscoveries: false }
     });
-    if (dmCampRes.status !== 201 || dmCampRes.body.mode !== 'dm') {
-      throw new Error(`Failed to create DM mode notebook: status ${dmCampRes.status}`);
+    if (dmCampRes.status !== 201 || dmCampRes.body.mode !== 'dm' || dmCampRes.body.system !== 'D&D 5e' || !dmCampRes.body.settings?.allowDmSecrets) {
+      throw new Error(`Failed to create DM mode notebook with settings: status ${dmCampRes.status}`);
     }
     const dmCampId = dmCampRes.body.id;
-    console.log('PASS: Created DM Mode notebook successfully.');
+    console.log('PASS: Created DM Mode notebook with brief settings successfully.');
 
-    // 3. Test Creating Player Mode Notebook
+    // 3. Test Creating Player Mode Notebook with Brief Settings
     const playerCampRes = await request('POST', '/api/campaigns', {
       name: 'Bruce Solo Quest',
       description: 'Paladin personal journal',
-      mode: 'player'
+      mode: 'player',
+      system: 'Pathfinder 2e',
+      settings: { allowDmSecrets: false, autoLinkDiscoveries: true }
     });
-    if (playerCampRes.status !== 201 || playerCampRes.body.mode !== 'player') {
-      throw new Error(`Failed to create Player mode notebook: status ${playerCampRes.status}`);
+    if (playerCampRes.status !== 201 || playerCampRes.body.mode !== 'player' || playerCampRes.body.system !== 'Pathfinder 2e') {
+      throw new Error(`Failed to create Player mode notebook with settings: status ${playerCampRes.status}`);
     }
     const playerCampId = playerCampRes.body.id;
-    console.log('PASS: Created Player Mode notebook successfully.');
+    console.log('PASS: Created Player Mode notebook with brief settings successfully.');
 
     // 4. Test Switching back to DM notebook
     const switchRes = await request('POST', '/api/campaigns/switch', { campaignId: dmCampId });
@@ -199,7 +203,35 @@ async function runTests() {
     const charId = charRes.body.id;
     console.log('PASS: Created Player Character.');
 
-    // 9. Clean up test data and reset to pristine empty state
+    // 9. Verify Frontend HTML Structure & Required Elements
+    const fs = require('fs');
+    const htmlContent = fs.readFileSync(path.resolve(__dirname, '../public/index.html'), 'utf8');
+    const requiredElements = [
+      'id="homePage"',
+      'class="home-page-layout"',
+      'id="app"',
+      'style="display: none;"',
+      'id="returnHomeBtn"',
+      'id="createNotebookForm"',
+      'id="newNotebookName"',
+      'id="newNotebookDesc"',
+      'name="notebookRoleChoice"',
+      'id="notebookRuleSystem"',
+      'id="settingEnableSecrets"',
+      'id="settingAutoLink"',
+      'id="savedNotebooksList"',
+      'id="startTempNotepadBtn"',
+      'id="homeThemeSwitcherBtn"'
+    ];
+
+    for (const elem of requiredElements) {
+      if (!htmlContent.includes(elem)) {
+        throw new Error(`Frontend HTML missing required element/attribute: ${elem}`);
+      }
+    }
+    console.log('PASS: Frontend HTML contains all required Home Page, Gateway, and Settings elements.');
+
+    // 10. Clean up test data and reset to pristine empty state
     await request('POST', '/api/reset');
     const resetCheck = await request('GET', '/api/data');
     if (resetCheck.body.entries.length !== 0 || resetCheck.body.campaigns.length !== 0) {

@@ -7,6 +7,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 > **Version Policy**: Project versioning remains strictly in the pre-1.0 series (`0.x.y`) until explicitly instructed to graduate to 1.0+.
 
+## [0.2.5] - 2026-10-05
+
+### Added
+- **Dedicated Full-Page Startup Home**: Replaced the dismissible startup modal with a dedicated, top-level Home Page (`#homePage`) displayed by default upon launching the app or website.
+- **Mandatory Notebook Selection Gateway**: Prevents unselected/empty notebook states by requiring the user to choose one of three explicit paths before entering the workspace:
+  1. Forge a new notebook with brief settings.
+  2. Open an existing saved notebook from the campaign list.
+  3. Launch a quick temporary notepad scratchpad session.
+- **Brief Campaign Settings upon Creation**:
+  - **Role & Mode Selector**: Direct radio selection cards for Dungeon Master (DM) Mode vs Player Character Mode.
+  - **Tabletop Rule System**: Configurable system selection (D&D 5th Edition, Pathfinder 2e, Daggerheart, OSR / Retro, Call of Cthulhu, Custom System).
+  - **Feature Toggles**: Quick checkboxes for enabling DM secret notes/whispers and auto-linking discoveries to the active hero journal.
+- **Home Navigation & Switcher**: Added prominent "🏠 Notebooks / Home" button in the main application header alongside the campaign selector pill, allowing effortless switching back to the Home Page at any time.
+- **Home Visual Style Switcher**: Integrated theme switcher pill directly onto the Home Page header so users can change visual themes prior to entering a notebook.
+
+### Fixed
+- Fixed issue where clicking outside the startup modal closed it into an empty campaign state (`activeCampaignId: null`), which caused workspace controls and note creation to become unresponsive.
+
+---
+
 ## [0.2.4] - 2026-10-05
 
 ### Added

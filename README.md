@@ -18,10 +18,13 @@ Dungeons & Dragons Notebook helps you organize your games. It keeps track of cam
 - Track bidirectional backlinks to see everywhere an entry gets referenced across the entire campaign.
 
 ### 3. User Modes & Notebook Roles
-- **Mode Selected Upon Creation**: Rather than a temporary quick toggle, each campaign notebook is configured upon creation as either a **Dungeon Master (DM) Notebook** or a **Player Notebook**.
+- **Default Home Page Gateway**: When launching the app or website, users arrive at a dedicated Tabletop Notebook Home screen. To move forward into the workspace, you choose one of three explicit paths:
+  1. **Forge New Notebook**: Create a notebook with tailored settings (DM vs Player role, Tabletop rule system, DM secret notes toggle, auto-linking discoveries).
+  2. **Saved Notebooks**: Resume an existing campaign with full details, role tags, and entry counts.
+  3. **Quick Temporary Notepad**: Launch an instant scratchpad for notes on the fly, with zero setup and the ability to convert/save into a permanent notebook at any time.
+- **Role & Mode Selected Upon Creation**: Rather than a temporary quick toggle, each campaign notebook is configured upon creation as either a **Dungeon Master (DM) Notebook** or a **Player Notebook**.
 - **DM Mode**: Unlock full access to every campaign entry, hidden DM secret notes, world hierarchy, encounter prep, and the main story arcs.
 - **Player Mode**: Keep things focused on character journals. Check active hero stats and notes, let the system automatically link viewed entries to the active character dossier, and switch between characters in seconds.
-- **Temporary Scratchpad**: Launch an instant, unsaved session notepad on startup or at any time, with the ability to convert and save it into a permanent DM or Player notebook.
 - **Adventuring Party Tab**: Dedicated view showcasing all player characters in your campaign with stats, active hero badges, and integrated family trees.
 - **Per-Character Family Trees**: Genealogical lineage trees are embedded directly under each character profile (in the Party roster and Character Dossier) as well as under NPC entries, tracking parents, spouses/partners, siblings, and children with clickable navigational links.
 - **Association Trees**: Visual relationship graphs for selected entries or the entire campaign.

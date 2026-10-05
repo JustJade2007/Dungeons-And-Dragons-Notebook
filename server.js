@@ -45,6 +45,13 @@ function loadData() {
       }
       parsed.campaigns.forEach(c => {
         if (!c.mode) c.mode = 'dm';
+        if (!c.system) c.system = 'D&D 5e';
+        if (!c.settings) {
+          c.settings = {
+            allowDmSecrets: true,
+            autoLinkDiscoveries: true
+          };
+        }
       });
       if (!parsed.entries || !Array.isArray(parsed.entries)) {
         parsed.entries = [];
@@ -336,6 +343,8 @@ app.get('/api/campaigns', (req, res) => {
     return {
       ...camp,
       mode: camp.mode || 'dm',
+      system: camp.system || 'D&D 5e',
+      settings: camp.settings || { allowDmSecrets: true, autoLinkDiscoveries: true },
       entryCount,
       charCount
     };
@@ -346,9 +355,9 @@ app.get('/api/campaigns', (req, res) => {
   });
 });
 
-// Create notebook / campaign (with DM/Player mode and optional temporary notepad migration)
+// Create notebook / campaign (with DM/Player mode, system, brief settings and optional temporary notepad migration)
 app.post('/api/campaigns', (req, res) => {
-  const { name, description, mode, convertTemporary } = req.body;
+  const { name, description, mode, system, settings, convertTemporary } = req.body;
   if (!name || !name.trim()) {
     return res.status(400).json({ error: 'Notebook name is required.' });
   }
@@ -359,6 +368,11 @@ app.post('/api/campaigns', (req, res) => {
     name: name.trim(),
     description: description || '',
     mode: mode === 'player' ? 'player' : 'dm',
+    system: system || 'D&D 5e',
+    settings: {
+      allowDmSecrets: settings?.allowDmSecrets !== undefined ? Boolean(settings.allowDmSecrets) : true,
+      autoLinkDiscoveries: settings?.autoLinkDiscoveries !== undefined ? Boolean(settings.autoLinkDiscoveries) : true
+    },
     createdAt: now,
     updatedAt: now
   };
