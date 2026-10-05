@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 > **Version Policy**: Project versioning remains strictly in the pre-1.0 series (`0.x.y`) until explicitly instructed to graduate to 1.0+.
 
+## [0.2.3] - 2026-10-05
+
+### Added
+- **Adventuring Party Tab**: Added a dedicated "Party" tab displaying all player characters in the campaign roster, with hero avatar initials, levels, class, alignment, active player character indicators, background chronicle, journal discovery count, and quick management actions.
+- **Embedded Per-Character Family Tree**: Shifted family tree generation from a standalone top-level tab to be embedded directly under each character:
+  - Displayed under each hero card in the Adventuring Party roster view.
+  - Displayed in the Character Dossier view under character notes & background.
+  - Displayed in the Entry Detail pane for NPC and character notebook entries.
+  - Visualizes Parents & Lineage, Current Generation (Subject, Spouses/Partners, Siblings), and Children & Descendants with clickable navigational chips.
+
+---
+
 ## [0.2.2] - 2026-10-05
 
 ### Added

@@ -105,7 +105,7 @@
     el.viewEntries = document.getElementById('viewEntries');
     el.viewGraph = document.getElementById('viewGraph');
     el.viewHierarchy = document.getElementById('viewHierarchy');
-    el.viewFamily = document.getElementById('viewFamily');
+    el.viewParty = document.getElementById('viewParty');
     el.viewDossier = document.getElementById('viewDossier');
 
     // Entries Tab
@@ -152,10 +152,21 @@
     el.graphResetBtn = document.getElementById('graphResetBtn');
     el.graphEmptyNotice = document.getElementById('graphEmptyNotice');
 
-    // Hierarchy & Family Tabs
+    // Hierarchy Tab
     el.hierarchyTreeContainer = document.getElementById('hierarchyTreeContainer');
-    el.familyRootSelect = document.getElementById('familyRootSelect');
-    el.familyTreeContainer = document.getElementById('familyTreeContainer');
+
+    // Adventuring Party Tab
+    el.partyTab = document.getElementById('partyTab');
+    el.partyCountBadge = document.getElementById('partyCountBadge');
+    el.partyEmptyState = document.getElementById('partyEmptyState');
+    el.partyGrid = document.getElementById('partyGrid');
+    el.partyNewHeroBtn = document.getElementById('partyNewHeroBtn');
+
+    // Family Tree Under Characters & Entries
+    el.sheetFamilySection = document.getElementById('sheetFamilySection');
+    el.sheetFamilyTreeContainer = document.getElementById('sheetFamilyTreeContainer');
+    el.detailFamilySection = document.getElementById('detailFamilySection');
+    el.detailFamilyTreeContainer = document.getElementById('detailFamilyTreeContainer');
 
     // Character Dossier Tab
     el.newCharacterBtn = document.getElementById('newCharacterBtn');
@@ -496,8 +507,8 @@
       renderAssociationGraph();
     } else if (state.activeTab === 'hierarchy') {
       renderHierarchyTree();
-    } else if (state.activeTab === 'family') {
-      renderFamilyTree();
+    } else if (state.activeTab === 'party') {
+      renderPartyView();
     } else if (state.activeTab === 'dossier') {
       renderCharacterSheet();
     }
@@ -584,6 +595,9 @@
 
   function updateBadges() {
     el.entriesCountBadge.textContent = state.entries.length;
+    if (el.partyCountBadge) {
+      el.partyCountBadge.textContent = state.characters.length;
+    }
     const activeChar = state.characters.find(c => c.id === state.activeCharacterId);
     const count = activeChar && Array.isArray(activeChar.linkedEntryIds) ? activeChar.linkedEntryIds.length : 0;
     el.playerLinkedCountBadge.textContent = count;
@@ -814,6 +828,16 @@
       });
     } else {
       el.detailConnectionsSection.style.display = 'none';
+    }
+
+    // Family Tree / Lineage Panel for Characters & NPCs
+    if (el.detailFamilySection) {
+      if (entry.category === 'npc' || hasFamilyConnections(entry)) {
+        el.detailFamilySection.style.display = 'block';
+        renderFamilyTreeForSubject(entry.title, entry.connections, el.detailFamilyTreeContainer, entry.id);
+      } else {
+        el.detailFamilySection.style.display = 'none';
+      }
     }
 
     // Children / Sub-entries Hierarchy
@@ -1382,96 +1406,260 @@
     });
   }
 
-  // --- TAB 4: FAMILY TREE RENDERER ---
-  function renderFamilyTree() {
-    el.familyTreeContainer.innerHTML = '';
-    el.familyRootSelect.innerHTML = '<option value="">-- Choose Dynasty / Family Root --</option>';
-
-    // Filter characters/NPCs with family relationships
-    const familyRelations = ['parent of', 'child of', 'father of', 'mother of', 'son of', 'daughter of', 'spouse of'];
-    const candidates = state.entries.filter(e => {
-      if (Array.isArray(e.connections)) {
-        return e.connections.some(c => familyRelations.some(r => (c.relation || '').toLowerCase().includes(r)));
+  // Helper to test if an entry has family-related relations
+  function hasFamilyConnections(entry) {
+    const familyKeywords = ['parent', 'father', 'mother', 'child', 'son', 'daughter', 'spouse', 'husband', 'wife', 'partner', 'married', 'sibling', 'brother', 'sister', 'ancestor', 'lineage'];
+    if (Array.isArray(entry.connections)) {
+      if (entry.connections.some(c => familyKeywords.some(k => (c.relation || '').toLowerCase().includes(k)))) {
+        return true;
+      }
+    }
+    // Also check if any other entry refers to this entry with family terms
+    return state.entries.some(e => {
+      if (e.id !== entry.id && Array.isArray(e.connections)) {
+        return e.connections.some(c => c.targetId === entry.id && familyKeywords.some(k => (c.relation || '').toLowerCase().includes(k)));
       }
       return false;
     });
+  }
 
-    candidates.forEach(c => {
-      const opt = document.createElement('option');
-      opt.value = c.id;
-      opt.textContent = `${c.title} (${c.category})`;
-      el.familyRootSelect.appendChild(opt);
-    });
+  // --- PER-CHARACTER & PER-ENTRY FAMILY TREE RENDERER ---
+  function renderFamilyTreeForSubject(subjectName, subjectConnections, container, subjectEntryId = null) {
+    if (!container) return;
+    container.innerHTML = '';
 
-    const rootId = el.familyRootSelect.value || candidates[0]?.id;
-
-    if (!rootId) {
-      el.familyTreeContainer.innerHTML = `
-        <div class="empty-state">
-          <h3>No Lineages Detected</h3>
-          <p>Add relationships between characters or NPCs using labels like "Parent of", "Father of", or "Mother of" to generate dynastic trees.</p>
-        </div>
-      `;
-      return;
+    // Find the primary entry corresponding to this subject (if any)
+    let primaryEntry = null;
+    if (subjectEntryId) {
+      primaryEntry = state.entries.find(e => e.id === subjectEntryId);
+    }
+    if (!primaryEntry && subjectName) {
+      primaryEntry = state.entries.find(e => (e.title || '').trim().toLowerCase() === subjectName.trim().toLowerCase());
     }
 
-    const root = state.entries.find(e => e.id === rootId);
-    if (!root) return;
+    const parents = [];
+    const spouses = [];
+    const siblings = [];
+    const children = [];
 
-    // Build Generation 1 (Root), Generation 2 (Children), etc.
-    const gen1Row = document.createElement('div');
-    gen1Row.className = 'family-generation-row';
-    gen1Row.appendChild(createFamilyCard(root, 'Patriarch / Matriarch'));
-    el.familyTreeContainer.appendChild(gen1Row);
+    const addedIds = new Set();
+    if (primaryEntry) addedIds.add(primaryEntry.id);
 
-    // Find children
-    const childEntries = [];
-    if (Array.isArray(root.connections)) {
-      root.connections.forEach(c => {
-        const rel = (c.relation || '').toLowerCase();
-        if (rel.includes('parent') || rel.includes('father') || rel.includes('mother')) {
-          const child = state.entries.find(e => e.id === c.targetId);
-          if (child) childEntries.push({ entry: child, rel: 'Child' });
-        }
-      });
-    }
+    // 1. Process outgoing connections
+    const outgoing = Array.isArray(subjectConnections) ? subjectConnections : (primaryEntry && Array.isArray(primaryEntry.connections) ? primaryEntry.connections : []);
+    outgoing.forEach(conn => {
+      const target = state.entries.find(e => e.id === conn.targetId);
+      if (!target || addedIds.has(target.id)) return;
 
-    // Also check reverse connections (e.g. child marked "child of root")
-    state.entries.forEach(e => {
-      if (Array.isArray(e.connections)) {
-        e.connections.forEach(c => {
-          if (c.targetId === root.id && (c.relation || '').toLowerCase().includes('child')) {
-            if (!childEntries.some(item => item.entry.id === e.id)) {
-              childEntries.push({ entry: e, rel: 'Child' });
-            }
-          }
-        });
+      const rel = (conn.relation || '').toLowerCase();
+      if (rel.includes('parent') || rel.includes('father') || rel.includes('mother') || rel.includes('ancestor')) {
+        parents.push({ entry: target, role: conn.relation || 'Parent' });
+        addedIds.add(target.id);
+      } else if (rel.includes('spouse') || rel.includes('husband') || rel.includes('wife') || rel.includes('partner') || rel.includes('married')) {
+        spouses.push({ entry: target, role: conn.relation || 'Spouse' });
+        addedIds.add(target.id);
+      } else if (rel.includes('sibling') || rel.includes('brother') || rel.includes('sister')) {
+        siblings.push({ entry: target, role: conn.relation || 'Sibling' });
+        addedIds.add(target.id);
+      } else if (rel.includes('child') || rel.includes('son') || rel.includes('daughter')) {
+        children.push({ entry: target, role: conn.relation || 'Child' });
+        addedIds.add(target.id);
       }
     });
 
-    if (childEntries.length > 0) {
-      const gen2Row = document.createElement('div');
-      gen2Row.className = 'family-generation-row';
-      childEntries.forEach(item => {
-        gen2Row.appendChild(createFamilyCard(item.entry, item.rel));
+    // 2. Process incoming connections from other entries in campaign
+    if (primaryEntry) {
+      state.entries.forEach(other => {
+        if (other.id === primaryEntry.id || addedIds.has(other.id)) return;
+        if (!Array.isArray(other.connections)) return;
+
+        other.connections.forEach(conn => {
+          if (conn.targetId === primaryEntry.id) {
+            const rel = (conn.relation || '').toLowerCase();
+            if (rel.includes('child') || rel.includes('son') || rel.includes('daughter')) {
+              children.push({ entry: other, role: conn.relation || 'Child' });
+              addedIds.add(other.id);
+            } else if (rel.includes('parent') || rel.includes('father') || rel.includes('mother')) {
+              parents.push({ entry: other, role: conn.relation || 'Parent' });
+              addedIds.add(other.id);
+            } else if (rel.includes('spouse') || rel.includes('husband') || rel.includes('wife') || rel.includes('partner')) {
+              spouses.push({ entry: other, role: conn.relation || 'Spouse' });
+              addedIds.add(other.id);
+            } else if (rel.includes('sibling') || rel.includes('brother') || rel.includes('sister')) {
+              siblings.push({ entry: other, role: conn.relation || 'Sibling' });
+              addedIds.add(other.id);
+            }
+          }
+        });
       });
-      el.familyTreeContainer.appendChild(gen2Row);
+    }
+
+    const hasAnyFamily = parents.length > 0 || spouses.length > 0 || siblings.length > 0 || children.length > 0;
+
+    if (!hasAnyFamily) {
+      container.innerHTML = '<div class="family-tree-empty">No family lineage recorded yet. Connect relatives in entry relationships (e.g. "Father of", "Mother of", "Spouse of", "Child of").</div>';
+      return;
+    }
+
+    // Helper to create a member chip
+    function createMemberChip(item) {
+      const chip = document.createElement('div');
+      chip.className = 'family-member-chip';
+      chip.innerHTML = `
+        <span class="family-chip-role">${escapeHTML(item.role)}</span>
+        <span class="family-chip-name">${escapeHTML(item.entry.title)}</span>
+        <span class="family-chip-meta">${escapeHTML(item.entry.category)} • ${escapeHTML(item.entry.status || 'Alive')}</span>
+      `;
+      chip.addEventListener('click', () => {
+        selectEntry(item.entry.id);
+        switchTab('entries');
+      });
+      return chip;
+    }
+
+    // Branch 1: Parents & Ancestors
+    if (parents.length > 0) {
+      const pSec = document.createElement('div');
+      pSec.className = 'family-branch-section';
+      pSec.innerHTML = '<span class="family-branch-title">👑 Parents & Lineage</span>';
+      const grid = document.createElement('div');
+      grid.className = 'family-chips-grid';
+      parents.forEach(p => grid.appendChild(createMemberChip(p)));
+      pSec.appendChild(grid);
+      container.appendChild(pSec);
+    }
+
+    // Branch 2: Current Generation / Spouses & Siblings
+    const curSec = document.createElement('div');
+    curSec.className = 'family-branch-section';
+    curSec.innerHTML = '<span class="family-branch-title">⚔️ Current Generation & Kin</span>';
+    const curGrid = document.createElement('div');
+    curGrid.className = 'family-chips-grid';
+
+    const selfChip = document.createElement('div');
+    selfChip.className = 'family-member-chip current-subject';
+    selfChip.innerHTML = `
+      <span class="family-chip-role">This Character</span>
+      <span class="family-chip-name">${escapeHTML(subjectName || 'Character')}</span>
+      <span class="family-chip-meta">Subject</span>
+    `;
+    curGrid.appendChild(selfChip);
+
+    spouses.forEach(s => curGrid.appendChild(createMemberChip(s)));
+    siblings.forEach(s => curGrid.appendChild(createMemberChip(s)));
+    curSec.appendChild(curGrid);
+    container.appendChild(curSec);
+
+    // Branch 3: Children & Descendants
+    if (children.length > 0) {
+      const cSec = document.createElement('div');
+      cSec.className = 'family-branch-section';
+      cSec.innerHTML = '<span class="family-branch-title">🌱 Children & Descendants</span>';
+      const grid = document.createElement('div');
+      grid.className = 'family-chips-grid';
+      children.forEach(c => grid.appendChild(createMemberChip(c)));
+      cSec.appendChild(grid);
+      container.appendChild(cSec);
     }
   }
 
-  function createFamilyCard(entry, relationTitle) {
-    const card = document.createElement('div');
-    card.className = 'family-card';
-    card.innerHTML = `
-      <div class="family-card-rel">${escapeHTML(relationTitle)}</div>
-      <div class="family-card-name">${escapeHTML(entry.title)}</div>
-      <div class="text-xs text-muted">${escapeHTML(entry.category)} • ${escapeHTML(entry.status || 'Alive')}</div>
-    `;
-    card.addEventListener('click', () => {
-      selectEntry(entry.id);
-      switchTab('entries');
+  // --- TAB 4: ADVENTURING PARTY VIEW ---
+  function renderPartyView() {
+    if (!el.partyGrid || !el.partyEmptyState) return;
+    el.partyGrid.innerHTML = '';
+
+    if (state.characters.length === 0) {
+      el.partyEmptyState.style.display = 'block';
+      el.partyGrid.style.display = 'none';
+      return;
+    }
+
+    el.partyEmptyState.style.display = 'none';
+    el.partyGrid.style.display = 'grid';
+
+    state.characters.forEach(char => {
+      const isActive = char.id === state.activeCharacterId;
+      const card = document.createElement('article');
+      card.className = `party-member-card ${isActive ? 'is-active-hero' : ''}`;
+
+      const linkedCount = Array.isArray(char.linkedEntryIds) ? char.linkedEntryIds.length : 0;
+
+      card.innerHTML = `
+        <header class="party-card-header">
+          <div class="party-card-identity">
+            <div class="party-hero-avatar">${char.name.slice(0, 2).toUpperCase()}</div>
+            <div class="party-card-titles">
+              <h3 class="party-hero-name">${escapeHTML(char.name)}</h3>
+              <span class="party-hero-meta">Level ${char.level} ${escapeHTML(char.race || 'Adventurer')} • ${escapeHTML(char.characterClass || '')}</span>
+            </div>
+          </div>
+          <div>
+            ${isActive ? '<span class="party-hero-badge">⭐ Active Hero</span>' : `<button class="btn btn-xs btn-secondary set-active-party-btn" data-char-id="${char.id}">Set Active</button>`}
+          </div>
+        </header>
+
+        <div class="char-alignment-pill">${escapeHTML(char.alignment || 'True Neutral')}</div>
+
+        <div class="party-card-bio">
+          ${escapeHTML(char.notes || 'No backstory chronicle recorded for this hero.')}
+        </div>
+
+        <div class="party-card-family-section">
+          <div class="family-branch-title" style="margin-bottom: 6px;">Family Tree & Lineage</div>
+          <div class="party-card-family-container"></div>
+        </div>
+
+        <div class="party-card-stats">
+          <span>📖 ${linkedCount} Discoveries Logged</span>
+          <span>Adventurer Ready</span>
+        </div>
+
+        <footer class="party-card-actions">
+          <button class="btn btn-sm btn-primary open-dossier-btn" data-char-id="${char.id}">Journal & Dossier</button>
+          <button class="btn btn-sm btn-secondary edit-party-hero-btn" data-char-id="${char.id}">Edit</button>
+          <button class="btn btn-sm btn-danger-ghost delete-party-hero-btn" data-char-id="${char.id}">Delete</button>
+        </footer>
+      `;
+
+      // Render family tree under this character card
+      const familyCont = card.querySelector('.party-card-family-container');
+      renderFamilyTreeForSubject(char.name, null, familyCont);
+
+      // Event listeners
+      const setActiveBtn = card.querySelector('.set-active-party-btn');
+      if (setActiveBtn) {
+        setActiveBtn.addEventListener('click', async () => {
+          await api.setActiveCharacter(char.id);
+          state.activeCharacterId = char.id;
+          updateUI();
+        });
+      }
+
+      card.querySelector('.open-dossier-btn').addEventListener('click', () => {
+        state.selectedCharacterId = char.id;
+        switchTab('dossier');
+      });
+
+      card.querySelector('.edit-party-hero-btn').addEventListener('click', () => {
+        openCharacterModal(char);
+      });
+
+      card.querySelector('.delete-party-hero-btn').addEventListener('click', async () => {
+        if (confirm(`Permanently delete ${char.name} from the party?`)) {
+          await api.deleteCharacter(char.id);
+          state.characters = state.characters.filter(c => c.id !== char.id);
+          if (state.activeCharacterId === char.id) {
+            state.activeCharacterId = state.characters[0]?.id || null;
+          }
+          if (state.selectedCharacterId === char.id) {
+            state.selectedCharacterId = state.activeCharacterId;
+          }
+          updateUI();
+        }
+      });
+
+      el.partyGrid.appendChild(card);
     });
-    return card;
   }
 
   // --- TAB 5: CHARACTER DOSSIER (PLAYER MODE) ---
@@ -1518,6 +1706,11 @@
     el.sheetCharMeta.textContent = `Level ${char.level} ${char.race} ${char.characterClass}`;
     el.sheetCharAlignment.textContent = char.alignment;
     el.sheetCharNotes.innerHTML = renderMarkdownWithMentions(char.notes || '*(No character background or objectives recorded.)*');
+
+    // Render Family Tree & Lineage under this Character
+    if (el.sheetFamilyTreeContainer) {
+      renderFamilyTreeForSubject(char.name, null, el.sheetFamilyTreeContainer);
+    }
 
     // Active Character Button State
     if (char.id === state.activeCharacterId) {
@@ -2053,10 +2246,12 @@
       });
     });
 
-    // Family Tree Root Select
-    el.familyRootSelect.addEventListener('change', () => {
-      renderFamilyTree();
-    });
+    // Party Tab: New Hero Button
+    if (el.partyNewHeroBtn) {
+      el.partyNewHeroBtn.addEventListener('click', () => {
+        openCharacterModal();
+      });
+    }
 
     // Setup helpers
     setupMentionAutocomplete();

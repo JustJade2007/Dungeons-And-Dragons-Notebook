@@ -188,14 +188,15 @@
           <span>Parent Hierarchy</span>
         </button>
 
-        <button class="nav-tab" data-tab="family">
+        <button class="nav-tab" data-tab="party" id="partyTab">
           <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none">
             <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
             <circle cx="9" cy="7" r="4"/>
             <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
             <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
           </svg>
-          <span>Family Tree</span>
+          <span>Party</span>
+          <span class="badge" id="partyCountBadge">0</span>
         </button>
 
         <button class="nav-tab" data-tab="dossier" id="dossierTab">
@@ -355,6 +356,12 @@
               <div id="detailConnectionsList" class="connections-chip-list"></div>
             </section>
 
+            <!-- Family Tree & Lineage (rendered under characters and NPCs) -->
+            <section id="detailFamilySection" class="detail-section family-panel" style="display: none;">
+              <h3 class="section-title">Family Tree & Lineage</h3>
+              <div id="detailFamilyTreeContainer" class="character-family-tree-container"></div>
+            </section>
+
             <!-- Sub-Entries / Children Hierarchy -->
             <section id="detailChildrenSection" class="detail-section children-panel" style="display: none;">
               <h3 class="section-title">Sub-Entries & Contains</h3>
@@ -444,22 +451,38 @@
       </section>
 
       <!-- ============================================== -->
-      <!-- TAB 4: FAMILY TREE VIEW -->
+      <!-- TAB 4: ADVENTURING PARTY VIEW -->
       <!-- ============================================== -->
-      <section id="viewFamily" class="tab-view">
+      <section id="viewParty" class="tab-view">
         <div class="view-header">
           <div class="view-header-text">
-            <h2>Genealogical & Lineage Family Trees</h2>
-            <p>Visualize dynastic lines, noble houses, and character lineages connected by "Parent of", "Child of", and "Spouse of" relationships.</p>
+            <h2>Adventuring Party</h2>
+            <p>Track all player characters in your campaign, their active status, heroic levels, backstories, and lineages.</p>
           </div>
           <div class="view-header-controls">
-            <select id="familyRootSelect" aria-label="Select lineage root entry">
-              <option value="">-- Choose Dynasty / Family Root --</option>
-            </select>
+            <button id="partyNewHeroBtn" class="btn btn-primary glow-btn">+ New Hero</button>
           </div>
         </div>
-        <div class="family-tree-container" id="familyTreeContainer">
-          <!-- Dynamic Family Tree Render -->
+
+        <div class="party-content-container">
+          <!-- Empty state when no characters -->
+          <div id="partyEmptyState" class="empty-state" style="display: none;">
+            <div class="empty-icon">
+              <svg viewBox="0 0 24 24" width="48" height="48" stroke="currentColor" stroke-width="1.5" fill="none">
+                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                <circle cx="9" cy="7" r="4"/>
+                <path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/>
+              </svg>
+            </div>
+            <h3>No Party Members Yet</h3>
+            <p>Add the heroes and adventurers in your party to track their character sheets, notes, discoveries, and family lineages.</p>
+            <button class="btn btn-secondary" onclick="document.getElementById('newCharacterBtn').click()">Create First Hero</button>
+          </div>
+
+          <!-- Party Members Grid -->
+          <div id="partyGrid" class="party-members-grid">
+            <!-- Dynamic Party Member Cards with embedded Family Trees -->
+          </div>
         </div>
       </section>
 
@@ -512,6 +535,14 @@
               <section class="char-sheet-section">
                 <h3>Character Notes & Background</h3>
                 <div id="sheetCharNotes" class="markdown-rendered-body"></div>
+              </section>
+
+              <!-- Character Lineage & Family Tree -->
+              <section class="char-sheet-section" id="sheetFamilySection">
+                <div class="dossier-section-header">
+                  <h3>Family Tree & Lineage</h3>
+                </div>
+                <div id="sheetFamilyTreeContainer" class="character-family-tree-container"></div>
               </section>
 
               <section class="char-sheet-section">

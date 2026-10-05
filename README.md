@@ -22,9 +22,10 @@ Dungeons & Dragons Notebook helps you organize your games. It keeps track of cam
 - **DM Mode**: Unlock full access to every campaign entry, hidden DM secret notes, world hierarchy, encounter prep, and the main story arcs.
 - **Player Mode**: Keep things focused on character journals. Check active hero stats and notes, let the system automatically link viewed entries to the active character dossier, and switch between characters in seconds.
 - **Temporary Scratchpad**: Launch an instant, unsaved session notepad on startup or at any time, with the ability to convert and save it into a permanent DM or Player notebook.
+- **Adventuring Party Tab**: Dedicated view showcasing all player characters in your campaign with stats, active hero badges, and integrated family trees.
+- **Per-Character Family Trees**: Genealogical lineage trees are embedded directly under each character profile (in the Party roster and Character Dossier) as well as under NPC entries, tracking parents, spouses/partners, siblings, and children with clickable navigational links.
 - **Association Trees**: Visual relationship graphs for selected entries or the entire campaign.
 - **Parent-Child Hierarchy**: Organize regions into settlements, settlements into buildings, factions into branches, etc.
-- **Family Trees**: Dedicated genealogical tree generation for families, dynasties, and lineages.
 
 ### 4. Visual Styles & Multi-Theme Settings
 - **Whimsical Fey & Goblin (Default)**: Organic tabletop fantasy theme inspired by Goblin's Notebook, with moss greens, bioluminescent teal glow, warm mushroom amber, and fairytale typography (`MedievalSharp`).
