@@ -45,20 +45,24 @@ Dungeons & Dragons Notebook helps you organize your games. It keeps track of cam
 
 ### 9. Deployment Options
 - **Desktop Application**: Packaged standalone executable (`.exe`) for Windows.
-- **Web Application**: Accessible via modern web browsers for cross-platform access.---
+- **Web Application**: Accessible via modern web browsers for cross-platform access.
 
-## Project Structure```text
+---
+
+## Project Structure
+
+```text
 Dungeons-And-Dragons-Notebook/
 ├── .github/              # Issue templates and workflows
 ├── .gitignore            # Git exclusion rules
 ├── CHANGELOG.md          # Release history and roadmap progress
 ├── README.md             # Project overview and specifications
 ├── SECURITY.md           # Security policies and key management
-└── TODO.md               # Feature checklist and development roadmap
+└── TODO.md               # Feature checklist and development roadmap (local)
 ```
 
 ---
 
 ## Current Version
 
-- **Version**: `0.1.0` (Project Outline & Planning Phase)
+- **Version**: `0.1.1` (Pre-1.0 Initial Development & Planning Phase)

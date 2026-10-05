@@ -54,3 +54,7 @@ logs/
 *.log
 tmp/
 temp/
+
+# Task & Planning Files
+TODO.md
+todo.md
