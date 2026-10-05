@@ -1,6 +1,6 @@
 {
   "name": "dungeons-and-dragons-notebook",
-  "version": "0.2.5",
+  "version": "0.2.6",
   "description": "A comprehensive note-taking and organization tool tailored for tabletop role-playing games and narrative-heavy campaigns.",
   "main": "server.js",
   "type": "commonjs",
@@ -17,6 +17,7 @@
     "express": "^4.21.2"
   },
   "devDependencies": {
+    "electron": "^44.5.1",
     "esbuild": "^0.25.0",
     "postject": "^1.0.0-alpha.6"
   },

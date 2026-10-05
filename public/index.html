@@ -286,6 +286,19 @@
               </svg>
               <span>Manage Characters</span>
             </button>
+            <button class="dropdown-item" id="newSessionMenuBtn">
+              <svg viewBox="0 0 24 24" width="15" height="15" stroke="currentColor" stroke-width="2" fill="none">
+                <path d="M12 8v4l3 3m6-3a9 9 0 1 1-18 0 9 9 0 0 1 18 0z"/>
+              </svg>
+              <span>Log Session Note</span>
+            </button>
+            <button class="dropdown-item" id="addChapterMenuBtn">
+              <svg viewBox="0 0 24 24" width="15" height="15" stroke="currentColor" stroke-width="2" fill="none">
+                <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
+                <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
+              </svg>
+              <span>Add Campaign Chapter</span>
+            </button>
             <button class="dropdown-item" id="addCategoryBtn">
               <svg viewBox="0 0 24 24" width="15" height="15" stroke="currentColor" stroke-width="2" fill="none">
                 <path d="M4 9h16M4 15h16M10 3L8 21M16 3l-2 18"/>
@@ -332,6 +345,14 @@
           </svg>
           <span>Notebook Entries</span>
           <span class="badge" id="entriesCountBadge">0</span>
+        </button>
+
+        <button class="nav-tab" data-tab="sessions" id="sessionsTab">
+          <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none">
+            <path d="M12 8v4l3 3m6-3a9 9 0 1 1-18 0 9 9 0 0 1 18 0z"/>
+          </svg>
+          <span>Session Notes</span>
+          <span class="badge" id="sessionsCountBadge">0</span>
         </button>
 
         <button class="nav-tab" data-tab="graph">
@@ -568,6 +589,165 @@
             <!-- Timestamp Metadata -->
             <footer class="detail-footer">
               <span id="detailTimestamps" class="text-muted text-xs">Created: - | Updated: -</span>
+            </footer>
+          </article>
+        </div>
+      </section>
+
+      <!-- ============================================== -->
+      <!-- TAB: SESSION NOTES & CHAPTERS VIEW -->
+      <!-- ============================================== -->
+      <section id="viewSessions" class="tab-view">
+        <!-- Sidebar: Chapters, Sorting & Session List -->
+        <aside class="entries-sidebar sessions-sidebar">
+          <div class="sidebar-header">
+            <div class="sessions-sidebar-top">
+              <div class="sessions-sidebar-heading">
+                <span class="sessions-heading-title">Chapters & Chronicles</span>
+                <span class="sessions-heading-sub">Organized by campaign arc</span>
+              </div>
+              <div class="sessions-header-actions">
+                <button type="button" id="sidebarNewSessionBtn" class="btn btn-xs btn-primary glow-btn" title="Log a new session note">+ Session</button>
+                <button type="button" id="sidebarNewChapterBtn" class="btn btn-xs btn-secondary" title="Name and add a new chapter">+ Chapter</button>
+              </div>
+            </div>
+
+            <!-- Chapter Filter Pills: General is default and includes everything! -->
+            <div class="chapter-filter-wrapper">
+              <div class="chapter-filter-heading-row">
+                <label class="chapter-filter-label">Filter by Chapter:</label>
+                <span class="text-xs text-muted" id="activeChapterDesc">Showing all sessions</span>
+              </div>
+              <div class="filter-pills chapter-filter-pills" id="chapterFilterContainer">
+                <button class="filter-pill active" data-chapter="General" title="Includes everything across all chapters">General (All)</button>
+              </div>
+            </div>
+
+            <!-- Sorting & Search Controls -->
+            <div class="sidebar-controls">
+              <div class="select-wrapper">
+                <select id="sessionSortSelect" aria-label="Sort sessions">
+                  <option value="num-desc">Session # (High to Low)</option>
+                  <option value="num-asc">Session # (Low to High)</option>
+                  <option value="date-desc">Date Played (Newest First)</option>
+                  <option value="date-asc">Date Played (Oldest First)</option>
+                  <option value="updated">Recently Edited</option>
+                  <option value="alpha">Title (A - Z)</option>
+                </select>
+              </div>
+
+              <div class="select-wrapper">
+                <select id="sessionChapterSelectFilter" aria-label="Select chapter">
+                  <option value="General">All Chapters (General)</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <!-- Sessions List Container -->
+          <div class="entries-list sessions-list" id="sessionsList">
+            <!-- Dynamic Session Cards -->
+          </div>
+
+          <!-- Empty State (Zero sessions in list) -->
+          <div id="sessionsEmptyState" class="empty-state" style="display: none;">
+            <div class="empty-icon">
+              <svg viewBox="0 0 24 24" width="40" height="40" stroke="currentColor" stroke-width="1.5" fill="none">
+                <path d="M12 8v4l3 3m6-3a9 9 0 1 1-18 0 9 9 0 0 1 18 0z"/>
+              </svg>
+            </div>
+            <h3>No session notes recorded</h3>
+            <p>Chronicle your table's adventures, battles, discoveries, and chapters. Date is auto-saved automatically!</p>
+            <button class="btn btn-secondary" id="emptyStateNewSessionBtn">+ Log First Session</button>
+          </div>
+        </aside>
+
+        <!-- Main Session Detail Pane -->
+        <div class="entry-detail-pane session-detail-pane" id="sessionDetailPane">
+          <div id="noSessionSelected" class="detail-placeholder">
+            <div class="placeholder-art">
+              <svg viewBox="0 0 24 24" width="64" height="64" stroke="currentColor" stroke-width="1" fill="none">
+                <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
+                <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
+                <line x1="9" y1="7" x2="15" y2="7"/>
+                <line x1="9" y1="11" x2="13" y2="11"/>
+              </svg>
+            </div>
+            <h2>Select a session to view notes</h2>
+            <p>Review the logs, chapter chronicle, party attendees, and cross-referenced lore from your game sessions.</p>
+            <div class="quick-tips">
+              <div class="tip-card">
+                <strong>Chapters:</strong> Filter by "General" to view all sessions at once, or focus on a specific campaign arc.
+              </div>
+              <div class="tip-card">
+                <strong>Auto-Saved Dates:</strong> Each session automatically timestamps and saves the date it happened.
+              </div>
+              <div class="tip-card">
+                <strong>@ Cross-Links:</strong> Mention characters, items, and places in your session notes for instant bidirectional links.
+              </div>
+            </div>
+            <button class="btn btn-primary glow-btn" id="placeholderNewSessionBtn">+ Log New Session</button>
+          </div>
+
+          <!-- Active Session Content View -->
+          <article id="sessionDetailContent" class="entry-detail-card session-detail-card" style="display: none;">
+            <header class="detail-header">
+              <div class="detail-title-group">
+                <div class="detail-badge-row">
+                  <span id="detailSessionNumBadge" class="session-num-badge">Session #1</span>
+                  <span id="detailSessionChapterBadge" class="chapter-badge">📜 Chapter: General</span>
+                  <span id="detailSessionDateBadge" class="date-badge">📅 Date: 2026-10-05</span>
+                </div>
+                <h2 id="detailSessionTitle" class="detail-title">Session Title</h2>
+                <div id="detailSessionAttendeesRow" class="session-attendees-row"></div>
+              </div>
+
+              <div class="detail-actions">
+                <button id="editSessionBtn" class="btn btn-sm btn-secondary" title="Edit this session">
+                  <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none">
+                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                  </svg>
+                  <span>Edit</span>
+                </button>
+                <button id="deleteSessionBtn" class="btn btn-sm btn-danger-ghost" title="Delete this session note">
+                  <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none">
+                    <polyline points="3 6 5 6 21 6"/>
+                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                  </svg>
+                </button>
+              </div>
+            </header>
+
+            <!-- Summary / Logline Panel -->
+            <section id="detailSessionSummarySection" class="detail-section session-summary-panel" style="display: none;">
+              <h3 class="section-title">Session Synopsis</h3>
+              <p id="detailSessionSummaryText" class="session-summary-text"></p>
+            </section>
+
+            <!-- Main Notes & Chronicle with @ Mention Interactive Links -->
+            <section class="detail-section notes-panel">
+              <h3 class="section-title">Session Chronicle & Adventure Log</h3>
+              <div id="detailSessionNotesBody" class="markdown-rendered-body"></div>
+            </section>
+
+            <!-- DM Secret Notes (Only visible in DM Mode) -->
+            <section id="detailSessionSecretNotesSection" class="detail-section secret-notes-panel">
+              <div class="secret-header">
+                <span class="secret-badge">
+                  <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none">
+                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+                    <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                  </svg>
+                  <span>DM Whispers & Secret Session Prep</span>
+                </span>
+              </div>
+              <div id="detailSessionSecretNotesBody" class="secret-notes-body markdown-rendered-body"></div>
+            </section>
+
+            <!-- Timestamp Metadata -->
+            <footer class="detail-footer">
+              <span id="detailSessionTimestamps" class="text-muted text-xs">Logged: - | Updated: -</span>
             </footer>
           </article>
         </div>
@@ -908,7 +1088,129 @@
       </div>
     </div>
 
-    <!-- 3. SAVE TEMPORARY NOTEPAD MODAL -->
+    <!-- 3. SESSION CREATE / EDIT MODAL -->
+    <div id="sessionModal" class="modal-backdrop" style="display: none;">
+      <div class="modal-dialog modal-lg">
+        <header class="modal-header">
+          <h2 id="sessionModalTitle" class="modal-title">Create Session Note</h2>
+          <button class="modal-close-btn" data-close-modal="sessionModal">&times;</button>
+        </header>
+
+        <form id="sessionForm" class="modal-body">
+          <input type="hidden" id="sessionFormId">
+
+          <!-- Row 1: Title and Session Number -->
+          <div class="form-row">
+            <div class="form-group flex-2">
+              <label for="sessionFormTitle">Session Title <span class="required">*</span></label>
+              <input type="text" id="sessionFormTitle" placeholder="e.g. Session 1: Ambush on the Triboar Trail" required autocomplete="off">
+            </div>
+            <div class="form-group flex-1">
+              <label for="sessionFormNumber">Session #</label>
+              <input type="number" id="sessionFormNumber" min="1" value="1">
+            </div>
+          </div>
+
+          <!-- Row 2: Date It Happened (Auto-saved) and Chapter Selection -->
+          <div class="form-row">
+            <div class="form-group flex-1">
+              <label for="sessionFormDate">
+                <span>Date Happened</span>
+                <span class="badge-mini">Auto-saved</span>
+              </label>
+              <input type="date" id="sessionFormDate" required>
+            </div>
+
+            <div class="form-group flex-1">
+              <div class="field-header-row">
+                <label for="sessionFormChapterSelect">Chapter / Arc</label>
+                <button type="button" id="sessionToggleNewChapterBtn" class="btn btn-xs btn-ghost">+ New Chapter</button>
+              </div>
+              <select id="sessionFormChapterSelect">
+                <option value="General" selected>General (Default - Includes Everything)</option>
+                <!-- Dynamically populated options -->
+                <option value="__new__">+ Name a New Chapter...</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Inline New Chapter Input (Shown when naming a new chapter) -->
+          <div class="form-group" id="sessionFormNewChapterWrapper" style="display: none;">
+            <label for="sessionFormNewChapter">New Chapter Name <span class="required">*</span></label>
+            <div class="inline-input-group">
+              <input type="text" id="sessionFormNewChapter" placeholder="e.g. Chapter 1: The Mines of Phandelver, Act 2: Baldur's Gate..." autocomplete="off">
+              <button type="button" id="sessionCancelNewChapterBtn" class="btn btn-xs btn-secondary">Cancel</button>
+            </div>
+          </div>
+
+          <!-- Row 3: Attendees / Heroes Present -->
+          <div class="form-group">
+            <label>Party Members Present (optional)</label>
+            <div id="sessionAttendeesPicker" class="session-attendees-picker">
+              <!-- Dynamically populated party chips -->
+            </div>
+          </div>
+
+          <!-- Row 4: Summary / Logline -->
+          <div class="form-group">
+            <label for="sessionFormSummary">Logline / Quick Summary (optional)</label>
+            <input type="text" id="sessionFormSummary" placeholder="Short recap of key events, encounters, or cliffhangers..." autocomplete="off">
+          </div>
+
+          <!-- Row 5: Chronicle Notes with @ mentions -->
+          <div class="form-group editor-form-group">
+            <div class="field-header-row">
+              <label for="sessionFormNotes">Session Chronicle & Adventure Log</label>
+              <span class="text-xs text-muted">Type <code>@</code> to cross-reference NPCs, locations, items...</span>
+            </div>
+            <div class="mention-editor-wrapper">
+              <textarea id="sessionFormNotes" rows="9" placeholder="Chronicle what transpired, combat rounds, player decisions, lore discovered... Type @ to link an entry."></textarea>
+              <div id="sessionMentionPicker" class="mention-autocomplete-picker" style="display: none;">
+                <div class="mention-picker-header">Mention Entry</div>
+                <div class="mention-picker-list" id="sessionMentionPickerList"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Row 6: DM Secret Notes (DM Mode Only) -->
+          <div class="form-group" id="sessionDmSecretNotesField">
+            <label for="sessionFormSecretNotes">
+              <span class="secret-tag">DM Secret Notes & Whispers</span>
+              <span class="text-xs text-muted">Visible only in DM Mode. Hidden in Player Mode.</span>
+            </label>
+            <textarea id="sessionFormSecretNotes" rows="3" placeholder="Behind-the-screen prep, hidden clues, true enemy motivations..."></textarea>
+          </div>
+
+          <footer class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-close-modal="sessionModal">Cancel</button>
+            <button type="submit" class="btn btn-primary glow-btn">Save Session Note</button>
+          </footer>
+        </form>
+      </div>
+    </div>
+
+    <!-- 4. STANDALONE CHAPTER MODAL -->
+    <div id="chapterModal" class="modal-backdrop" style="display: none;">
+      <div class="modal-dialog">
+        <header class="modal-header">
+          <h2 class="modal-title">Name New Chapter</h2>
+          <button class="modal-close-btn" data-close-modal="chapterModal">&times;</button>
+        </header>
+        <form id="chapterForm" class="modal-body">
+          <div class="form-group">
+            <label for="chapterFormName">Chapter Name <span class="required">*</span></label>
+            <input type="text" id="chapterFormName" placeholder="e.g. Chapter 2: The Redbrand Hideout" required autocomplete="off">
+            <p class="text-xs text-muted" style="margin-top: 6px;">Sessions can be grouped under this chapter. "General" includes all sessions by default.</p>
+          </div>
+          <footer class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-close-modal="chapterModal">Cancel</button>
+            <button type="submit" class="btn btn-primary glow-btn">Create Chapter</button>
+          </footer>
+        </form>
+      </div>
+    </div>
+
+    <!-- 5. SAVE TEMPORARY NOTEPAD MODAL -->
     <div id="saveTempModal" class="modal-backdrop" style="display: none;">
       <div class="modal-dialog">
         <header class="modal-header">

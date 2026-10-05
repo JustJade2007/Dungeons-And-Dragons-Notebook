@@ -7,7 +7,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 > **Version Policy**: Project versioning remains strictly in the pre-1.0 series (`0.x.y`) until explicitly instructed to graduate to 1.0+.
 
-## [0.2.5] - 2026-10-05
+## [0.2.6] - 2026-10-05
+
+### Added
+- **Session Notes & Journaling Tab**: Added a dedicated "Session Notes" workspace view (`#viewSessions`) accessible via the main navigation bar, complete with session count badges and multi-column ledger view.
+- **Session Chapters Support**:
+  - **"General" Default Chapter**: Includes everything across all chapters and sessions by default.
+  - **Dynamic Chapter Selection & Creation**: Users can select an existing chapter from the campaign or name a new chapter directly inline during session creation or via the standalone chapter creator (`#chapterModal`).
+  - **Chapter Filter Pills & Dropdown**: Interactive filter pills display session counts per chapter and let the user switch between "General (All)" and individual chapter views instantly.
+- **Auto-Saved Session Date**: Automatically populates and saves the date each session happened (defaulting to the current date `YYYY-MM-DD`), with full editing support via native date picker.
+- **Session Attendance Tracking**: Interactive hero picker chips allowing DMs and players to select which party members were present at the table for each session.
+- **DM Secret Session Notes**: Hidden DM-only session prep and whisper notes isolated from player view, honoring campaign DM mode privileges.
+- **Bidirectional Session Cross-Referencing**:
+  - Auto-complete `@` mentions now search and link both notebook entries and session notes (`@[Session Title](session:id)`).
+  - Entry detail pane now computes and displays backlinks from session notes that referenced the entry.
+  - Clicking session links navigates directly to the referenced session note in the ledger.
+- **Session REST API Endpoints**:
+  - `GET /api/sessions`: Returns campaign sessions, with chapter filtering ("General" returns all sessions).
+  - `POST /api/sessions`: Logs a session with auto-saved date, auto-incrementing session numbers, and chapter assignment.
+  - `PUT /api/sessions/:id`: Modifies session details.
+  - `DELETE /api/sessions/:id`: Deletes session logs.
+  - `GET /api/chapters`: Lists chapters for the campaign.
+  - `POST /api/chapters`: Creates a new chapter for the campaign.
+- **Updated Verification Test Suite & Standalone Executable**:
+  - Expanded test suites in `tests/verify-app.js` and `tests/verify-exe.js` with comprehensive chapter filtering, auto-saved date, and session CRUD tests (16/16 tests passing).
+  - Rebuilt and certified standalone binary `dist/dnd-notebook.exe`.
 
 ### Added
 - **Dedicated Full-Page Startup Home**: Replaced the dismissible startup modal with a dedicated, top-level Home Page (`#homePage`) displayed by default upon launching the app or website.

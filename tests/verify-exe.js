@@ -152,7 +152,14 @@ async function runExeVerification() {
       'id="settingAutoLink"',
       'id="savedNotebooksList"',
       'id="startTempNotepadBtn"',
-      'id="homeThemeSwitcherBtn"'
+      'id="homeThemeSwitcherBtn"',
+      'id="sessionsTab"',
+      'id="viewSessions"',
+      'id="sessionModal"',
+      'id="chapterModal"',
+      'id="chapterFilterContainer"',
+      'id="sessionFormChapterSelect"',
+      'id="sessionFormDate"'
     ];
 
     for (const elem of requiredDomElements) {
@@ -326,9 +333,55 @@ async function runExeVerification() {
     if (kinRes.status !== 201) {
       throw new Error('Failed to create family character relative.');
     }
-    console.log('✓ PASS [10/15]: Per-character family tree lineage modeling verified.');
+    console.log('✓ PASS [10/16]: Per-character family tree lineage modeling verified.');
 
-    // 11. Temporary Scratchpad Session & Permanent Notebook Migration
+    // 11. Session Notes, Chapters, Auto-saved Date, and General Chapter Filter
+    const todayStr = new Date().toISOString().slice(0, 10);
+    const session1Res = await request('POST', '/api/sessions', {
+      campaignId: dmCampId,
+      title: 'Ambush at the High Road',
+      summary: 'Bandits ambushed the caravan.',
+      notes: 'Lord Dagult commended the defense.'
+    });
+    if (session1Res.status !== 201 || session1Res.body.chapter !== 'General' || session1Res.body.date !== todayStr) {
+      throw new Error('Session 1 failed to default to General chapter or auto-save today date.');
+    }
+    const session1Id = session1Res.body.id;
+
+    // Create custom chapter
+    const customChapter = 'Chapter 2: Road to Neverwinter';
+    const createChapRes = await request('POST', '/api/chapters', {
+      campaignId: dmCampId,
+      name: customChapter
+    });
+    if (createChapRes.status !== 201 || !createChapRes.body.chapters.includes(customChapter)) {
+      throw new Error('Failed to create campaign chapter in standalone executable.');
+    }
+
+    // Create session in custom chapter
+    const session2Res = await request('POST', '/api/sessions', {
+      campaignId: dmCampId,
+      title: 'Arrival in Neverwinter',
+      chapter: customChapter,
+      date: '2026-10-04',
+      summary: 'Reached city gates under twilight.'
+    });
+    if (session2Res.status !== 201 || session2Res.body.chapter !== customChapter) {
+      throw new Error('Session 2 failed to associate with custom chapter.');
+    }
+
+    // Verify General chapter returns everything, custom chapter returns only matching
+    const generalRes = await request('GET', `/api/sessions?campaignId=${dmCampId}&chapter=General`);
+    if (generalRes.status !== 200 || generalRes.body.sessions.length !== 2) {
+      throw new Error('General filter failed to return all sessions.');
+    }
+    const filteredRes = await request('GET', `/api/sessions?campaignId=${dmCampId}&chapter=${encodeURIComponent(customChapter)}`);
+    if (filteredRes.status !== 200 || filteredRes.body.sessions.length !== 1 || filteredRes.body.sessions[0].id !== session2Res.body.id) {
+      throw new Error('Specific chapter filter failed in standalone executable.');
+    }
+    console.log('✓ PASS [11/16]: Session Notes, Chapters, Auto-saved Date, and General Chapter Filter verified.');
+
+    // 12. Temporary Scratchpad Session & Permanent Notebook Migration
     await request('POST', '/api/campaigns/switch', { campaignId: 'temporary' });
     const tempEntryRes = await request('POST', '/api/entries', {
       campaignId: 'temporary',
@@ -362,9 +415,9 @@ async function runExeVerification() {
     if (!migratedEntry || migratedEntry.campaignId !== newPermCampId) {
       throw new Error('Temporary entry was not properly migrated to the new permanent notebook.');
     }
-    console.log('✓ PASS [11/15]: Temporary scratchpad session and notebook migration verified.');
+    console.log('✓ PASS [12/16]: Temporary scratchpad session and notebook migration verified.');
 
-    // 12. Custom Category Creation & Persistence
+    // 13. Custom Category Creation & Persistence
     const catRes = await request('POST', '/api/categories', {
       name: 'Magical Artifacts',
       color: '#a855f7'
@@ -372,18 +425,18 @@ async function runExeVerification() {
     if (catRes.status !== 201 || catRes.body.name !== 'Magical Artifacts') {
       throw new Error('Failed to create custom entry category.');
     }
-    console.log('✓ PASS [12/15]: Custom category creation and color persistence verified.');
+    console.log('✓ PASS [13/16]: Custom category creation and color persistence verified.');
 
-    // 13. Data Export & Backup Generation
+    // 14. Data Export & Backup Generation
     const exportRes = await request('GET', '/api/export');
     if (exportRes.status !== 200 || !exportRes.body.campaigns || !exportRes.body.entries) {
       throw new Error('Failed to export full backup snapshot.');
     }
     const backupSnapshot = exportRes.body;
     const preResetEntryCount = backupSnapshot.entries.length;
-    console.log(`✓ PASS [13/15]: Data backup export verified (${preResetEntryCount} entries snapshot).`);
+    console.log(`✓ PASS [14/16]: Data backup export verified (${preResetEntryCount} entries snapshot).`);
 
-    // 14. Data Import (Restore from Backup)
+    // 15. Data Import (Restore from Backup)
     await request('POST', '/api/reset');
     const wipedData = await request('GET', '/api/data');
     if (wipedData.body.entries.length !== 0) {
@@ -399,18 +452,18 @@ async function runExeVerification() {
     if (restoredData.body.entries.length !== preResetEntryCount) {
       throw new Error(`Data restoration mismatch: expected ${preResetEntryCount}, got ${restoredData.body.entries.length}`);
     }
-    console.log('✓ PASS [14/15]: Data reset and backup restore import verified.');
+    console.log('✓ PASS [15/16]: Data reset and backup restore import verified.');
 
-    // 15. Final Clean Slate Reset (Rule: Zero Test Artifacts Leftover)
+    // 16. Final Clean Slate Reset (Rule: Zero Test Artifacts Leftover)
     await request('POST', '/api/reset');
     const finalCheck = await request('GET', '/api/data');
     if (finalCheck.body.entries.length !== 0 || finalCheck.body.campaigns.length !== 0 || finalCheck.body.characters.length !== 0) {
       throw new Error('Final database reset failed. Test artifacts were left behind.');
     }
-    console.log('✓ PASS [15/15]: Pristine clean slate teardown completed successfully.');
+    console.log('✓ PASS [16/16]: Pristine clean slate teardown completed successfully.');
 
     console.log('===================================================');
-    console.log('  ALL 15 FEATURE VERIFICATION TESTS PASSED (100%)  ');
+    console.log('  ALL 16 FEATURE VERIFICATION TESTS PASSED (100%)  ');
     console.log('  Standalone executable is certified ready for use! ');
     console.log('===================================================');
   } catch (err) {

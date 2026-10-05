@@ -13,11 +13,21 @@ Dungeons & Dragons Notebook helps you organize your games. It keeps track of cam
 - Build parent-child hierarchies and connect different parts of your world, including NPCs, locations, quests, factions, items, and lore.
 - Sort everything automatically or group items with custom categories.
 
-### 2. Cross-Referencing & Mentions
-- Use `@` to drop in-text mentions that automatically ping and hyperlink other notebook entries.
-- Track bidirectional backlinks to see everywhere an entry gets referenced across the entire campaign.
+### 2. Session Notes & Campaign Chapters
+- **Dedicated Session Notes Tab**: Log and review gameplay sessions in chronological order with auto-incrementing session numbers, session summaries, formatted markdown notes, and DM whispers.
+- **Campaign Chapters**:
+  - **"General" Default View**: Automatically encompasses all sessions and notes across the entire campaign.
+  - **Chapter Selection & Creation**: Assign sessions to existing chapters or create and name new chapters on the fly.
+  - **Chapter Filter Pills**: Easily switch between the General (All) view and specific chapters to focus on narrative arcs.
+- **Auto-Saved Session Dates**: Automatically records and saves the date each session took place (defaulting to today's date) with quick calendar adjustments.
+- **Table Attendance Tracking**: Tag which heroes from the party roster were present during each session.
+- **Cross-Referencing**: Link session notes to lore entries and vice versa using `@` mentions, with automatic bidirectional backlinks tracking every session an entry is mentioned in.
 
-### 3. User Modes & Notebook Roles
+### 3. Cross-Referencing & Mentions
+- Use `@` to drop in-text mentions that automatically ping and hyperlink other notebook entries and session logs.
+- Track bidirectional backlinks to see everywhere an entry gets referenced across the entire campaign, including game sessions.
+
+### 4. User Modes & Notebook Roles
 - **Default Home Page Gateway**: When launching the app or website, users arrive at a dedicated Tabletop Notebook Home screen. To move forward into the workspace, you choose one of three explicit paths:
   1. **Forge New Notebook**: Create a notebook with tailored settings (DM vs Player role, Tabletop rule system, DM secret notes toggle, auto-linking discoveries).
   2. **Saved Notebooks**: Resume an existing campaign with full details, role tags, and entry counts.
@@ -30,33 +40,35 @@ Dungeons & Dragons Notebook helps you organize your games. It keeps track of cam
 - **Association Trees**: Visual relationship graphs for selected entries or the entire campaign.
 - **Parent-Child Hierarchy**: Organize regions into settlements, settlements into buildings, factions into branches, etc.
 
-### 4. Visual Styles & Multi-Theme Settings
+### 5. Visual Styles & Multi-Theme Settings
 - **Whimsical Fey & Goblin (Default)**: Organic tabletop fantasy theme inspired by Goblin's Notebook, with moss greens, bioluminescent teal glow, warm mushroom amber, and fairytale typography (`MedievalSharp`).
 - **Inked Parchment & Tavern Scroll**: Warm sepia and tea-stained antique scroll aesthetic with candlelit accents and medieval typography (`Almendra`).
 - **Classic Obsidian & Dungeon**: Dark stone slate with gothic amber and crimson highlights (`Cinzel`).
 - **Astral Sea & Spellbook**: Deep midnight celestial indigo with starlight cyan and arcane violet runes.
 - **Theme Switcher**: Quick toggle badge in the header and Appearance & Styles settings dialog accessible from the options menu, with persistent local storage.
 
-### 5. Entry Metadata & Status Tracking
+### 6. Entry Metadata & Status Tracking
 - Structured metadata fields for quick identification.
 - Friendly/Hostile/Neutral alignment tracking.
 - Vital status tracking: Alive, Dead, Missing, Unknown, Resurrected.
 
-### 6. Media Support
+### 7. Media Support
 - Upload and embed images and videos directly within notes and entry headers.
 - Media galleries for maps, character art, handouts, and location vistas.
 
-### 7. Formatting & AI-Assisted Tools
+### 8. Formatting & AI-Assisted Tools
 - Built-in rich text and Markdown auto-formatting.
 - Optional AI integration using user-provided API keys (e.g., Gemini):
   - Speech-to-text note-taking to record spoken session notes, summarizing and categorizing them directly into entries.
   - User confirmation required before applying any AI-generated data or overwrites.
-  - Optional AI-assisted formatting (e.g., Gemini Flash-Lite) to create GitHub-style tables, statistics blocks, and formatted stat sheets.### 8. Data Management & Storage
+  - Optional AI-assisted formatting to create tables, statistics blocks, and formatted stat sheets.
+
+### 9. Data Management & Storage
 - Support for multiple campaigns/notebooks.
 - Local export and import backup functionality.
 - Cloud save integrations (e.g., Google Drive) enabling campaign sync and sharing.
 
-### 9. Deployment Options
+### 10. Deployment Options
 - **Desktop Application**: Packaged standalone executable (`.exe`) for Windows located in `dist/dnd-notebook.exe`.
 - **Web Application**: Node.js/Express web application running on `http://localhost:3000`.
 
@@ -76,7 +88,7 @@ Dungeons & Dragons Notebook helps you organize your games. It keeps track of cam
 - Run `test-website.bat` to test and launch the Node.js website environment.
 - Run `test-exe.bat` to run the comprehensive feature test suite directly against the standalone Windows executable (`dist/dnd-notebook.exe`).
 - Run `npm test` to execute the Node application verification test suite (`tests/verify-app.js`).
-- Run `npm run test:exe` (or `npm run verify:exe`) to execute the 15-point feature verification suite against the compiled executable (`tests/verify-exe.js`).
+- Run `npm run test:exe` (or `npm run verify:exe`) to execute the 16-point feature verification suite against the compiled executable (`tests/verify-exe.js`).
 - During executable builds (`npm run build:exe` or `build-exe.bat`), `tests/verify-exe.js` is automatically executed to finalize and certify the binary before distribution.
 
 ---

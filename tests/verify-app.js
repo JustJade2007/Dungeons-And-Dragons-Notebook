@@ -81,7 +81,8 @@ async function runTests() {
   console.log('PASS: Server started and health check passed.');
 
   try {
-    // 1. Check clean database state (Zero dummy/template entries rule)
+    // 1. Ensure and check clean database state (Zero dummy/template entries rule)
+    await request('POST', '/api/reset');
     const initData = await request('GET', '/api/data');
     console.log(`Checking initial database: ${initData.body.entries.length} entries, ${initData.body.campaigns.length} notebooks.`);
 
@@ -203,7 +204,89 @@ async function runTests() {
     const charId = charRes.body.id;
     console.log('PASS: Created Player Character.');
 
-    // 9. Verify Frontend HTML Structure & Required Elements
+    // 9. Test Session Notes, Chapters, Auto-saved Date, and Filtering
+    const todayStr = new Date().toISOString().slice(0, 10);
+
+    // 9a. Create Session 1 with default chapter and auto-saved date
+    const session1Res = await request('POST', '/api/sessions', {
+      campaignId: dmCampId,
+      title: 'Arrival at the Frozen Spires',
+      summary: 'Party reached the rim of the glacier.',
+      notes: `Met with @[Lord Dagult](${npcId}) before setting out.`,
+      secretNotes: 'DM Secret: The glacier is hollowed out by ancient magic.'
+    });
+    if (session1Res.status !== 201 || !session1Res.body.id) {
+      throw new Error(`Failed to create session 1: status ${session1Res.status}`);
+    }
+    const session1 = session1Res.body;
+    if (session1.chapter !== 'General') {
+      throw new Error(`Expected default chapter 'General', got: ${session1.chapter}`);
+    }
+    if (session1.date !== todayStr) {
+      throw new Error(`Expected auto-saved date to default to today (${todayStr}), got: ${session1.date}`);
+    }
+    if (session1.sessionNumber !== 1) {
+      throw new Error(`Expected sessionNumber 1, got: ${session1.sessionNumber}`);
+    }
+    console.log('PASS: Session 1 auto-saved date and defaulted to General chapter.');
+
+    // 9b. Create Chapter via POST /api/chapters
+    const chapterName = 'Chapter 1: The Glacier Depths';
+    const createChapRes = await request('POST', '/api/chapters', {
+      campaignId: dmCampId,
+      name: chapterName
+    });
+    if (createChapRes.status !== 201 || !createChapRes.body.chapters.includes(chapterName)) {
+      throw new Error('Failed to create campaign chapter.');
+    }
+    console.log('PASS: Created campaign chapter successfully.');
+
+    // 9c. Create Session 2 in the new chapter with explicit date
+    const session2Res = await request('POST', '/api/sessions', {
+      campaignId: dmCampId,
+      title: 'The Demilich Tomb',
+      date: '2026-10-01',
+      chapter: chapterName,
+      summary: 'Descended into the crypts.',
+      notes: 'Discovered the hidden runes of Netheril.'
+    });
+    if (session2Res.status !== 201 || !session2Res.body.id) {
+      throw new Error(`Failed to create session 2: status ${session2Res.status}`);
+    }
+    const session2 = session2Res.body;
+    if (session2.chapter !== chapterName) {
+      throw new Error(`Expected chapter '${chapterName}', got: ${session2.chapter}`);
+    }
+    if (session2.sessionNumber !== 2) {
+      throw new Error(`Expected auto-calculated sessionNumber 2, got: ${session2.sessionNumber}`);
+    }
+    console.log('PASS: Session 2 created with specific chapter and auto session number.');
+
+    // 9d. Test Chapter filtering: General includes everything; specific chapter returns only its own sessions
+    const generalSessionsRes = await request('GET', `/api/sessions?campaignId=${dmCampId}&chapter=General`);
+    if (generalSessionsRes.status !== 200 || generalSessionsRes.body.sessions.length !== 2) {
+      throw new Error(`General chapter filter expected 2 sessions, got ${generalSessionsRes.body.sessions?.length}`);
+    }
+    const specificChapterRes = await request('GET', `/api/sessions?campaignId=${dmCampId}&chapter=${encodeURIComponent(chapterName)}`);
+    if (specificChapterRes.status !== 200 || specificChapterRes.body.sessions.length !== 1 || specificChapterRes.body.sessions[0].id !== session2.id) {
+      throw new Error(`Specific chapter filter expected 1 session for '${chapterName}'`);
+    }
+    console.log('PASS: General includes everything, and specific chapter filter isolates sessions.');
+
+    // 9e. Test Session Update and Delete
+    const updateSessRes = await request('PUT', `/api/sessions/${session1.id}`, {
+      summary: 'Updated summary: Glacier summit reached successfully.'
+    });
+    if (updateSessRes.status !== 200 || updateSessRes.body.summary !== 'Updated summary: Glacier summit reached successfully.') {
+      throw new Error('Failed to update session note.');
+    }
+    const delSessRes = await request('DELETE', `/api/sessions/${session2.id}`);
+    if (delSessRes.status !== 200) {
+      throw new Error('Failed to delete session note.');
+    }
+    console.log('PASS: Session update and deletion verified.');
+
+    // 10. Verify Frontend HTML Structure & Required Elements
     const fs = require('fs');
     const htmlContent = fs.readFileSync(path.resolve(__dirname, '../public/index.html'), 'utf8');
     const requiredElements = [
@@ -221,7 +304,14 @@ async function runTests() {
       'id="settingAutoLink"',
       'id="savedNotebooksList"',
       'id="startTempNotepadBtn"',
-      'id="homeThemeSwitcherBtn"'
+      'id="homeThemeSwitcherBtn"',
+      'id="sessionsTab"',
+      'id="viewSessions"',
+      'id="sessionModal"',
+      'id="chapterModal"',
+      'id="chapterFilterContainer"',
+      'id="sessionFormChapterSelect"',
+      'id="sessionFormDate"'
     ];
 
     for (const elem of requiredElements) {

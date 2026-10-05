@@ -15,10 +15,15 @@
     characters: [],
     activeCharacterId: null,
     customCategories: [],
+    sessions: [],
+    chapters: ['General'],
+    selectedSessionId: null,
+    selectedChapter: 'General', // 'General' by default, which includes everything
+    sessionSortOption: 'num-desc',
     selectedEntryId: null,
     selectedCharacterId: null,
     currentMode: 'dm', // 'dm' or 'player'
-    activeTab: 'entries', // 'entries', 'graph', 'hierarchy', 'family', 'dossier'
+    activeTab: 'entries', // 'entries', 'sessions', 'graph', 'hierarchy', 'family', 'dossier'
     searchQuery: '',
     selectedCategory: 'all',
     selectedStatus: 'all',
@@ -240,6 +245,65 @@
     el.categoryForm = document.getElementById('categoryForm');
     el.catFormName = document.getElementById('catFormName');
     el.catFormColor = document.getElementById('catFormColor');
+
+    // Session Notes & Chapters
+    el.sessionsTab = document.getElementById('sessionsTab');
+    el.sessionsCountBadge = document.getElementById('sessionsCountBadge');
+    el.viewSessions = document.getElementById('viewSessions');
+    el.sidebarNewSessionBtn = document.getElementById('sidebarNewSessionBtn');
+    el.sidebarNewChapterBtn = document.getElementById('sidebarNewChapterBtn');
+    el.chapterFilterContainer = document.getElementById('chapterFilterContainer');
+    el.activeChapterDesc = document.getElementById('activeChapterDesc');
+    el.sessionSortSelect = document.getElementById('sessionSortSelect');
+    el.sessionChapterSelectFilter = document.getElementById('sessionChapterSelectFilter');
+    el.sessionsList = document.getElementById('sessionsList');
+    el.sessionsEmptyState = document.getElementById('sessionsEmptyState');
+    el.emptyStateNewSessionBtn = document.getElementById('emptyStateNewSessionBtn');
+
+    el.sessionDetailPane = document.getElementById('sessionDetailPane');
+    el.noSessionSelected = document.getElementById('noSessionSelected');
+    el.sessionDetailContent = document.getElementById('sessionDetailContent');
+    el.placeholderNewSessionBtn = document.getElementById('placeholderNewSessionBtn');
+    el.detailSessionNumBadge = document.getElementById('detailSessionNumBadge');
+    el.detailSessionChapterBadge = document.getElementById('detailSessionChapterBadge');
+    el.detailSessionDateBadge = document.getElementById('detailSessionDateBadge');
+    el.detailSessionTitle = document.getElementById('detailSessionTitle');
+    el.detailSessionAttendeesRow = document.getElementById('detailSessionAttendeesRow');
+    el.editSessionBtn = document.getElementById('editSessionBtn');
+    el.deleteSessionBtn = document.getElementById('deleteSessionBtn');
+    el.detailSessionSummarySection = document.getElementById('detailSessionSummarySection');
+    el.detailSessionSummaryText = document.getElementById('detailSessionSummaryText');
+    el.detailSessionNotesBody = document.getElementById('detailSessionNotesBody');
+    el.detailSessionSecretNotesSection = document.getElementById('detailSessionSecretNotesSection');
+    el.detailSessionSecretNotesBody = document.getElementById('detailSessionSecretNotesBody');
+    el.detailSessionTimestamps = document.getElementById('detailSessionTimestamps');
+
+    el.sessionModal = document.getElementById('sessionModal');
+    el.sessionForm = document.getElementById('sessionForm');
+    el.sessionModalTitle = document.getElementById('sessionModalTitle');
+    el.sessionFormId = document.getElementById('sessionFormId');
+    el.sessionFormTitle = document.getElementById('sessionFormTitle');
+    el.sessionFormNumber = document.getElementById('sessionFormNumber');
+    el.sessionFormDate = document.getElementById('sessionFormDate');
+    el.sessionFormChapterSelect = document.getElementById('sessionFormChapterSelect');
+    el.sessionToggleNewChapterBtn = document.getElementById('sessionToggleNewChapterBtn');
+    el.sessionFormNewChapterWrapper = document.getElementById('sessionFormNewChapterWrapper');
+    el.sessionFormNewChapter = document.getElementById('sessionFormNewChapter');
+    el.sessionCancelNewChapterBtn = document.getElementById('sessionCancelNewChapterBtn');
+    el.sessionAttendeesPicker = document.getElementById('sessionAttendeesPicker');
+    el.sessionFormSummary = document.getElementById('sessionFormSummary');
+    el.sessionFormNotes = document.getElementById('sessionFormNotes');
+    el.sessionDmSecretNotesField = document.getElementById('sessionDmSecretNotesField');
+    el.sessionFormSecretNotes = document.getElementById('sessionFormSecretNotes');
+    el.sessionMentionPicker = document.getElementById('sessionMentionPicker');
+    el.sessionMentionPickerList = document.getElementById('sessionMentionPickerList');
+
+    el.chapterModal = document.getElementById('chapterModal');
+    el.chapterForm = document.getElementById('chapterForm');
+    el.chapterFormName = document.getElementById('chapterFormName');
+
+    el.newSessionMenuBtn = document.getElementById('newSessionMenuBtn');
+    el.addChapterMenuBtn = document.getElementById('addChapterMenuBtn');
   }
 
   // --- API SERVICE ---
@@ -267,6 +331,39 @@
     },
     async deleteEntry(id) {
       const res = await fetch(`/api/entries/${id}`, { method: 'DELETE' });
+      return await res.json();
+    },
+    async saveSession(session) {
+      if (session.id) {
+        const res = await fetch(`/api/sessions/${session.id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(session)
+        });
+        return await res.json();
+      } else {
+        const res = await fetch('/api/sessions', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(session)
+        });
+        return await res.json();
+      }
+    },
+    async deleteSession(id) {
+      const res = await fetch(`/api/sessions/${id}`, { method: 'DELETE' });
+      return await res.json();
+    },
+    async fetchChapters(campaignId) {
+      const res = await fetch(`/api/chapters?campaignId=${campaignId || ''}`);
+      return await res.json();
+    },
+    async createChapter(name, campaignId) {
+      const res = await fetch('/api/chapters', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, campaignId })
+      });
       return await res.json();
     },
     async saveCharacter(character) {
@@ -396,6 +493,7 @@
       state.characters = data.characters || [];
       state.activeCharacterId = data.activeCharacterId || null;
       state.customCategories = data.customCategories || [];
+      state.sessions = Array.isArray(data.sessions) ? data.sessions : [];
 
       // Determine notebook mode from active campaign if one was stored
       if (state.activeCampaignId === 'temporary') {
@@ -473,6 +571,7 @@
       const isDm = (camp.mode || 'dm') === 'dm';
       const entryCount = state.entries.filter(e => e.campaignId === camp.id).length;
       const charCount = state.characters.filter(c => c.campaignId === camp.id).length;
+      const sessionCount = state.sessions.filter(s => s.campaignId === camp.id).length;
       const sys = camp.system || 'D&D 5e';
 
       card.innerHTML = `
@@ -482,6 +581,7 @@
             <span class="category-tag ${isDm ? 'cat-quest' : 'cat-location'}">${isDm ? '👑 DM Mode' : '🛡️ Player Mode'}</span>
             <span class="category-tag cat-faction" style="font-size: 0.65rem;">🎲 ${escapeHTML(sys)}</span>
             <span>${entryCount} entries</span>
+            ${sessionCount > 0 ? `<span>• ${sessionCount} sessions</span>` : ''}
             ${charCount > 0 ? `<span>• ${charCount} heroes</span>` : ''}
             <span>• ${formatRelativeTime(camp.updatedAt || camp.createdAt)}</span>
           </div>
@@ -538,6 +638,8 @@
       renderPartyView();
     } else if (state.activeTab === 'dossier') {
       renderCharacterSheet();
+    } else if (state.activeTab === 'sessions') {
+      renderSessionsView();
     }
   }
 
@@ -622,6 +724,10 @@
 
   function updateBadges() {
     el.entriesCountBadge.textContent = state.entries.length;
+    if (el.sessionsCountBadge) {
+      const campSessions = state.sessions.filter(s => s.campaignId === state.activeCampaignId);
+      el.sessionsCountBadge.textContent = campSessions.length;
+    }
     if (el.partyCountBadge) {
       el.partyCountBadge.textContent = state.characters.length;
     }
@@ -964,6 +1070,28 @@
         }
       }
 
+      // Check @ mentions in session notes & secret notes
+      state.sessions.forEach(session => {
+        if (session.campaignId !== state.activeCampaignId) return;
+        let isSessionReferenced = false;
+        if (session.notes && (session.notes.includes(targetId) || session.notes.toLowerCase().includes(`@${targetEntry.title.toLowerCase()}`))) {
+          isSessionReferenced = true;
+        }
+        if (!isSessionReferenced && state.currentMode === 'dm' && session.secretNotes) {
+          if (session.secretNotes.includes(targetId) || session.secretNotes.toLowerCase().includes(`@${targetEntry.title.toLowerCase()}`)) {
+            isSessionReferenced = true;
+          }
+        }
+        if (isSessionReferenced) {
+          referringEntries.push({
+            id: session.id,
+            title: `Session #${session.sessionNumber || 1}: ${session.title}`,
+            category: 'session',
+            isSession: true
+          });
+        }
+      });
+
       if (isReferenced) {
         referringEntries.push(source);
       }
@@ -985,11 +1113,20 @@
     backlinks.forEach(source => {
       const item = document.createElement('div');
       item.className = 'backlink-item';
+      const cat = source.isSession ? 'quest' : (source.category || 'lore').toLowerCase();
+      const badgeText = source.isSession ? 'SESSION' : (source.category || 'ENTRY');
       item.innerHTML = `
-        <span class="category-tag cat-${source.category.toLowerCase()}">${escapeHTML(source.category)}</span>
+        <span class="category-tag cat-${cat}">${escapeHTML(badgeText)}</span>
         <span>${escapeHTML(source.title)}</span>
       `;
-      item.addEventListener('click', () => selectEntry(source.id));
+      item.addEventListener('click', () => {
+        if (source.isSession) {
+          selectSession(source.id);
+          switchTab('sessions');
+        } else {
+          selectEntry(source.id);
+        }
+      });
       el.detailBacklinksList.appendChild(item);
     });
   }
@@ -1003,14 +1140,24 @@
 
     // Step 2: Parse @[Title](id) mentions
     out = out.replace(/@\[(.*?)\]\((.*?)\)/g, (match, title, id) => {
+      if (id && id.startsWith('session:')) {
+        const sId = id.replace('session:', '');
+        return `<a class="mention-link mention-session-link" data-session-id="${sId}">📜 ${title}</a>`;
+      }
       return `<a class="mention-link" data-entry-id="${id}">${title}</a>`;
     });
 
-    // Step 3: Parse @[Title] mentions (match against existing entries by title)
+    // Step 3: Parse @[Title] mentions (match against existing entries or sessions by title)
     out = out.replace(/@\[(.*?)\]/g, (match, title) => {
-      const found = state.entries.find(e => e.title.toLowerCase() === title.toLowerCase());
-      const idAttr = found ? `data-entry-id="${found.id}"` : '';
-      return `<a class="mention-link" ${idAttr}>${title}</a>`;
+      const foundEntry = state.entries.find(e => e.title.toLowerCase() === title.toLowerCase());
+      if (foundEntry) {
+        return `<a class="mention-link" data-entry-id="${foundEntry.id}">${title}</a>`;
+      }
+      const foundSession = state.sessions.find(s => s.title.toLowerCase() === title.toLowerCase());
+      if (foundSession) {
+        return `<a class="mention-link mention-session-link" data-session-id="${foundSession.id}">📜 ${title}</a>`;
+      }
+      return `<a class="mention-link">${title}</a>`;
     });
 
     // Step 4: Basic Markdown conversions (Headers, bold, italics, tables, lists)
@@ -1040,12 +1187,10 @@
   }
 
   // --- @ MENTION AUTOCOMPLETE PICKER ---
-  function setupMentionAutocomplete() {
-    const textarea = el.entryFormNotes;
-    const picker = el.mentionPicker;
-    const pickerList = el.mentionPickerList;
+  function setupMentionAutocompleteForTextarea(textarea, picker, pickerList, isSessionTextarea = false) {
+    if (!textarea || !picker || !pickerList) return;
     let selectedIndex = 0;
-    let matchingEntries = [];
+    let matchingItems = [];
     let mentionStartPos = -1;
 
     textarea.addEventListener('input', () => {
@@ -1054,7 +1199,6 @@
       const atIndex = textBeforeCursor.lastIndexOf('@');
 
       if (atIndex !== -1 && atIndex >= pos - 25) {
-        // Query text between '@' and cursor
         const query = textBeforeCursor.slice(atIndex + 1);
         if (!/\s/.test(query)) {
           mentionStartPos = atIndex;
@@ -1067,18 +1211,18 @@
     });
 
     textarea.addEventListener('keydown', e => {
-      if (picker.style.display !== 'none' && matchingEntries.length > 0) {
+      if (picker.style.display !== 'none' && matchingItems.length > 0) {
         if (e.key === 'ArrowDown') {
           e.preventDefault();
-          selectedIndex = (selectedIndex + 1) % matchingEntries.length;
+          selectedIndex = (selectedIndex + 1) % matchingItems.length;
           updateHighlightedItem();
         } else if (e.key === 'ArrowUp') {
           e.preventDefault();
-          selectedIndex = (selectedIndex - 1 + matchingEntries.length) % matchingEntries.length;
+          selectedIndex = (selectedIndex - 1 + matchingItems.length) % matchingItems.length;
           updateHighlightedItem();
         } else if (e.key === 'Enter' || e.key === 'Tab') {
           e.preventDefault();
-          insertMention(matchingEntries[selectedIndex]);
+          insertMention(matchingItems[selectedIndex]);
         } else if (e.key === 'Escape') {
           hidePicker();
         }
@@ -1087,14 +1231,34 @@
 
     function showPicker(query) {
       const q = query.toLowerCase();
-      const currentEditingId = el.entryFormId.value;
+      const currentEditingEntryId = el.entryFormId?.value;
+      const currentEditingSessionId = el.sessionFormId?.value;
       
-      matchingEntries = state.entries.filter(e => {
-        if (e.id === currentEditingId) return false;
+      const matchedEntries = state.entries.filter(e => {
+        if (!isSessionTextarea && e.id === currentEditingEntryId) return false;
         return e.title.toLowerCase().includes(q);
-      }).slice(0, 6);
+      }).map(e => ({
+        id: e.id,
+        title: e.title,
+        category: e.category,
+        isSession: false
+      }));
 
-      if (matchingEntries.length === 0) {
+      const matchedSessions = state.sessions.filter(s => {
+        if (isSessionTextarea && s.id === currentEditingSessionId) return false;
+        return (s.title && s.title.toLowerCase().includes(q)) ||
+               (s.chapter && s.chapter.toLowerCase().includes(q)) ||
+               (`session ${s.sessionNumber}`.includes(q));
+      }).map(s => ({
+        id: `session:${s.id}`,
+        title: `Session #${s.sessionNumber || 1}: ${s.title}`,
+        category: 'session',
+        isSession: true
+      }));
+
+      matchingItems = [...matchedEntries, ...matchedSessions].slice(0, 8);
+
+      if (matchingItems.length === 0) {
         hidePicker();
         return;
       }
@@ -1102,17 +1266,19 @@
       pickerList.innerHTML = '';
       selectedIndex = 0;
 
-      matchingEntries.forEach((entry, idx) => {
-        const item = document.createElement('div');
-        item.className = `mention-picker-item ${idx === 0 ? 'highlighted' : ''}`;
-        item.innerHTML = `
-          <span>${escapeHTML(entry.title)}</span>
-          <span class="category-tag cat-${entry.category.toLowerCase()}">${escapeHTML(entry.category)}</span>
+      matchingItems.forEach((item, idx) => {
+        const row = document.createElement('div');
+        row.className = `mention-picker-item ${idx === 0 ? 'highlighted' : ''}`;
+        const catClass = item.isSession ? 'cat-quest' : `cat-${(item.category || 'lore').toLowerCase()}`;
+        const badgeLabel = item.isSession ? 'SESSION' : (item.category || 'ENTRY').toUpperCase();
+        row.innerHTML = `
+          <span>${escapeHTML(item.title)}</span>
+          <span class="category-tag ${catClass}">${escapeHTML(badgeLabel)}</span>
         `;
-        item.addEventListener('click', () => {
-          insertMention(entry);
+        row.addEventListener('click', () => {
+          insertMention(item);
         });
-        pickerList.appendChild(item);
+        pickerList.appendChild(row);
       });
 
       picker.style.display = 'block';
@@ -1120,7 +1286,7 @@
 
     function hidePicker() {
       picker.style.display = 'none';
-      matchingEntries = [];
+      matchingItems = [];
       mentionStartPos = -1;
     }
 
@@ -1131,13 +1297,13 @@
       });
     }
 
-    function insertMention(entry) {
+    function insertMention(item) {
       if (mentionStartPos === -1) return;
       const text = textarea.value;
       const pos = textarea.selectionStart;
       const before = text.slice(0, mentionStartPos);
       const after = text.slice(pos);
-      const mentionToken = `@[${entry.title}](${entry.id}) `;
+      const mentionToken = `@[${item.title}](${item.id}) `;
 
       textarea.value = before + mentionToken + after;
       const newCursorPos = before.length + mentionToken.length;
@@ -1145,6 +1311,11 @@
       textarea.focus();
       hidePicker();
     }
+  }
+
+  function setupMentionAutocomplete() {
+    setupMentionAutocompleteForTextarea(el.entryFormNotes, el.mentionPicker, el.mentionPickerList, false);
+    setupMentionAutocompleteForTextarea(el.sessionFormNotes, el.sessionMentionPicker, el.sessionMentionPickerList, true);
   }
 
   // --- TAB 2: ASSOCIATION GRAPH RENDERER ---
@@ -1588,6 +1759,363 @@
       cSec.appendChild(grid);
       container.appendChild(cSec);
     }
+  }
+
+  // --- TAB: SESSION NOTES & CHAPTERS ---
+
+  function renderSessionsView() {
+    renderChapterFilters();
+    renderSessionsList();
+    renderSessionDetail();
+  }
+
+  function getCampaignChapters() {
+    const chapterSet = new Set(['General']);
+    const activeCamp = state.campaigns.find(c => c.id === state.activeCampaignId);
+    if (activeCamp && Array.isArray(activeCamp.chapters)) {
+      activeCamp.chapters.forEach(ch => {
+        if (ch && ch.trim()) chapterSet.add(ch.trim());
+      });
+    }
+    // Also collect chapters from current sessions in this campaign
+    state.sessions
+      .filter(s => s.campaignId === state.activeCampaignId)
+      .forEach(s => {
+        if (s.chapter && s.chapter.trim()) chapterSet.add(s.chapter.trim());
+      });
+    return Array.from(chapterSet);
+  }
+
+  function renderChapterFilters() {
+    if (!el.chapterFilterContainer) return;
+    state.chapters = getCampaignChapters();
+    el.chapterFilterContainer.innerHTML = '';
+
+    const campSessions = state.sessions.filter(s => s.campaignId === state.activeCampaignId);
+
+    // 1. General (All) Button - Selected by default, includes all sessions
+    const generalBtn = document.createElement('button');
+    generalBtn.className = `filter-pill ${state.selectedChapter === 'General' ? 'active' : ''}`;
+    generalBtn.dataset.chapter = 'General';
+    generalBtn.innerHTML = `General (All) <span class="badge" style="margin-left: 4px;">${campSessions.length}</span>`;
+    generalBtn.title = 'Includes everything across all chapters';
+    generalBtn.addEventListener('click', () => {
+      state.selectedChapter = 'General';
+      renderChapterFilters();
+      renderSessionsList();
+    });
+    el.chapterFilterContainer.appendChild(generalBtn);
+
+    // 2. Specific Chapter Buttons
+    state.chapters.forEach(ch => {
+      if (ch === 'General') return;
+      const count = campSessions.filter(s => s.chapter === ch).length;
+      const btn = document.createElement('button');
+      btn.className = `filter-pill ${state.selectedChapter === ch ? 'active' : ''}`;
+      btn.dataset.chapter = ch;
+      btn.innerHTML = `${escapeHTML(ch)} <span class="badge" style="margin-left: 4px;">${count}</span>`;
+      btn.addEventListener('click', () => {
+        state.selectedChapter = ch;
+        renderChapterFilters();
+        renderSessionsList();
+      });
+      el.chapterFilterContainer.appendChild(btn);
+    });
+
+    // Update Dropdown Filter
+    if (el.sessionChapterSelectFilter) {
+      el.sessionChapterSelectFilter.innerHTML = '<option value="General">All Chapters (General)</option>';
+      state.chapters.forEach(ch => {
+        if (ch === 'General') return;
+        const opt = document.createElement('option');
+        opt.value = ch;
+        opt.textContent = ch;
+        if (state.selectedChapter === ch) opt.selected = true;
+        el.sessionChapterSelectFilter.appendChild(opt);
+      });
+      if (state.selectedChapter === 'General') {
+        el.sessionChapterSelectFilter.value = 'General';
+      }
+    }
+
+    // Update Active Chapter description text
+    if (el.activeChapterDesc) {
+      if (state.selectedChapter === 'General') {
+        el.activeChapterDesc.textContent = 'Showing all sessions';
+      } else {
+        el.activeChapterDesc.textContent = `Filtered to "${state.selectedChapter}"`;
+      }
+    }
+  }
+
+  function getFilteredSessions() {
+    let result = state.sessions.filter(s => {
+      if (s.campaignId && s.campaignId !== state.activeCampaignId) return false;
+
+      // Chapter Filter: 'General' includes everything!
+      if (state.selectedChapter && state.selectedChapter !== 'General') {
+        if (s.chapter !== state.selectedChapter) return false;
+      }
+
+      // Search Query
+      if (state.searchQuery) {
+        const q = state.searchQuery.toLowerCase();
+        const matchesTitle = s.title && s.title.toLowerCase().includes(q);
+        const matchesChapter = s.chapter && s.chapter.toLowerCase().includes(q);
+        const matchesNotes = s.notes && s.notes.toLowerCase().includes(q);
+        const matchesSummary = s.summary && s.summary.toLowerCase().includes(q);
+        if (!matchesTitle && !matchesChapter && !matchesNotes && !matchesSummary) return false;
+      }
+
+      return true;
+    });
+
+    // Sorting
+    result.sort((a, b) => {
+      switch (state.sessionSortOption) {
+        case 'num-asc':
+          return (a.sessionNumber || 0) - (b.sessionNumber || 0);
+        case 'date-desc':
+          return new Date(b.date || b.createdAt || 0) - new Date(a.date || a.createdAt || 0);
+        case 'date-asc':
+          return new Date(a.date || a.createdAt || 0) - new Date(b.date || b.createdAt || 0);
+        case 'updated':
+          return new Date(b.updatedAt || b.createdAt || 0) - new Date(a.updatedAt || a.createdAt || 0);
+        case 'alpha':
+          return (a.title || '').localeCompare(b.title || '');
+        case 'num-desc':
+        default:
+          return (b.sessionNumber || 0) - (a.sessionNumber || 0);
+      }
+    });
+
+    return result;
+  }
+
+  function renderSessionsList() {
+    if (!el.sessionsList || !el.sessionsEmptyState) return;
+    const filtered = getFilteredSessions();
+    el.sessionsList.innerHTML = '';
+
+    if (filtered.length === 0) {
+      el.sessionsEmptyState.style.display = 'flex';
+      return;
+    }
+
+    el.sessionsEmptyState.style.display = 'none';
+
+    filtered.forEach(session => {
+      const card = document.createElement('div');
+      const isSelected = session.id === state.selectedSessionId;
+      card.className = `session-card ${isSelected ? 'active' : ''}`;
+      
+      const numLabel = session.sessionNumber ? `Session #${session.sessionNumber}` : 'Session';
+      const chapterLabel = session.chapter || 'General';
+      const dateLabel = session.date || new Date(session.createdAt || Date.now()).toISOString().slice(0, 10);
+      const snippet = session.summary || (session.notes ? session.notes.slice(0, 140).replace(/@\[(.*?)\](\(.*?\))?/g, '$1') : 'No chronicle text recorded.');
+
+      card.innerHTML = `
+        <div class="session-card-header">
+          <div class="session-card-title-group">
+            <span class="session-card-title">${escapeHTML(session.title)}</span>
+            <div class="session-card-chips">
+              <span class="session-num-badge">${escapeHTML(numLabel)}</span>
+              <span class="chapter-badge">📜 ${escapeHTML(chapterLabel)}</span>
+              <span class="date-badge">📅 ${escapeHTML(dateLabel)}</span>
+            </div>
+          </div>
+        </div>
+        <p class="session-card-snippet">${escapeHTML(snippet)}</p>
+      `;
+
+      card.addEventListener('click', () => {
+        selectSession(session.id);
+      });
+
+      el.sessionsList.appendChild(card);
+    });
+  }
+
+  function selectSession(id) {
+    state.selectedSessionId = id;
+    const cards = el.sessionsList.querySelectorAll('.session-card');
+    const filtered = getFilteredSessions();
+    cards.forEach((card, idx) => {
+      card.classList.toggle('active', filtered[idx]?.id === id);
+    });
+    renderSessionDetail();
+  }
+
+  function renderSessionDetail() {
+    if (!el.sessionDetailContent || !el.noSessionSelected) return;
+    const session = state.sessions.find(s => s.id === state.selectedSessionId);
+
+    if (!session) {
+      el.noSessionSelected.style.display = 'flex';
+      el.sessionDetailContent.style.display = 'none';
+      return;
+    }
+
+    el.noSessionSelected.style.display = 'none';
+    el.sessionDetailContent.style.display = 'flex';
+
+    el.detailSessionNumBadge.textContent = session.sessionNumber ? `Session #${session.sessionNumber}` : 'Session Note';
+    el.detailSessionChapterBadge.textContent = `📜 Chapter: ${session.chapter || 'General'}`;
+    el.detailSessionChapterBadge.title = 'Click to filter by this chapter';
+    el.detailSessionChapterBadge.style.cursor = 'pointer';
+    el.detailSessionChapterBadge.onclick = () => {
+      state.selectedChapter = session.chapter || 'General';
+      renderChapterFilters();
+      renderSessionsList();
+    };
+
+    el.detailSessionDateBadge.textContent = `📅 Date: ${session.date || new Date(session.createdAt || Date.now()).toISOString().slice(0, 10)}`;
+    el.detailSessionTitle.textContent = session.title;
+
+    // Attendees / Heroes present
+    el.detailSessionAttendeesRow.innerHTML = '';
+    if (Array.isArray(session.attendees) && session.attendees.length > 0) {
+      session.attendees.forEach(nameOrId => {
+        const char = state.characters.find(c => c.id === nameOrId || c.name === nameOrId);
+        const name = char ? char.name : nameOrId;
+        const chip = document.createElement('span');
+        chip.className = 'session-attendee-chip';
+        chip.innerHTML = `🛡️ ${escapeHTML(name)}`;
+        el.detailSessionAttendeesRow.appendChild(chip);
+      });
+      el.detailSessionAttendeesRow.style.display = 'flex';
+    } else {
+      el.detailSessionAttendeesRow.style.display = 'none';
+    }
+
+    // Summary / Logline
+    if (session.summary && session.summary.trim()) {
+      el.detailSessionSummarySection.style.display = 'block';
+      el.detailSessionSummaryText.textContent = session.summary;
+    } else {
+      el.detailSessionSummarySection.style.display = 'none';
+    }
+
+    // Chronicle Notes
+    el.detailSessionNotesBody.innerHTML = renderMarkdownWithMentions(session.notes || '*(No chronicle text recorded for this session yet.)*');
+    el.detailSessionNotesBody.querySelectorAll('.mention-link').forEach(link => {
+      link.addEventListener('click', e => {
+        e.preventDefault();
+        const targetId = link.dataset.entryId;
+        if (targetId) {
+          selectEntry(targetId);
+          switchTab('entries');
+        }
+      });
+    });
+
+    // Secret Notes (DM only)
+    if (state.currentMode === 'dm' && session.secretNotes && session.secretNotes.trim()) {
+      el.detailSessionSecretNotesSection.style.display = 'block';
+      el.detailSessionSecretNotesBody.innerHTML = renderMarkdownWithMentions(session.secretNotes);
+      el.detailSessionSecretNotesBody.querySelectorAll('.mention-link').forEach(link => {
+        link.addEventListener('click', e => {
+          e.preventDefault();
+          const targetId = link.dataset.entryId;
+          if (targetId) {
+            selectEntry(targetId);
+            switchTab('entries');
+          }
+        });
+      });
+    } else {
+      el.detailSessionSecretNotesSection.style.display = 'none';
+    }
+
+    // Timestamps
+    const createdStr = session.createdAt ? new Date(session.createdAt).toLocaleString() : 'Unknown';
+    const updatedStr = session.updatedAt ? new Date(session.updatedAt).toLocaleString() : createdStr;
+    el.detailSessionTimestamps.textContent = `Played: ${session.date || 'Today'} | Logged: ${createdStr} | Updated: ${updatedStr}`;
+  }
+
+  function openSessionModal(session = null) {
+    el.sessionForm.reset();
+    el.sessionFormNewChapterWrapper.style.display = 'none';
+    el.sessionFormNewChapter.value = '';
+
+    const todayStr = new Date().toISOString().slice(0, 10);
+    const campSessions = state.sessions.filter(s => s.campaignId === state.activeCampaignId);
+    state.chapters = getCampaignChapters();
+
+    // Populate Chapter Selector
+    el.sessionFormChapterSelect.innerHTML = '<option value="General">General (Default - Includes Everything)</option>';
+    state.chapters.forEach(ch => {
+      if (ch === 'General') return;
+      const opt = document.createElement('option');
+      opt.value = ch;
+      opt.textContent = ch;
+      el.sessionFormChapterSelect.appendChild(opt);
+    });
+    const newOpt = document.createElement('option');
+    newOpt.value = '__new__';
+    newOpt.textContent = '+ Name a New Chapter...';
+    el.sessionFormChapterSelect.appendChild(newOpt);
+
+    // Populate Attendees Checkbox Chips
+    el.sessionAttendeesPicker.innerHTML = '';
+    const campCharacters = state.characters.filter(c => !c.campaignId || c.campaignId === state.activeCampaignId);
+    if (campCharacters.length === 0) {
+      el.sessionAttendeesPicker.innerHTML = '<span class="text-xs text-muted">No heroes in party roster yet. You can add them under the Party tab.</span>';
+    } else {
+      campCharacters.forEach(char => {
+        const isPresent = session && Array.isArray(session.attendees) && (session.attendees.includes(char.id) || session.attendees.includes(char.name));
+        const label = document.createElement('label');
+        label.className = `attendee-picker-pill ${isPresent ? 'selected' : ''}`;
+        label.innerHTML = `
+          <input type="checkbox" name="sessionAttendee" value="${char.id}" ${isPresent ? 'checked' : ''}>
+          <span>🛡️ ${escapeHTML(char.name)} (Lvl ${char.level})</span>
+        `;
+        label.querySelector('input').addEventListener('change', (e) => {
+          label.classList.toggle('selected', e.target.checked);
+        });
+        el.sessionAttendeesPicker.appendChild(label);
+      });
+    }
+
+    if (session) {
+      el.sessionModalTitle.textContent = 'Edit Session Note';
+      el.sessionFormId.value = session.id;
+      el.sessionFormTitle.value = session.title;
+      el.sessionFormNumber.value = session.sessionNumber || 1;
+      el.sessionFormDate.value = session.date || todayStr;
+      el.sessionFormChapterSelect.value = session.chapter || 'General';
+      el.sessionFormSummary.value = session.summary || '';
+      el.sessionFormNotes.value = session.notes || '';
+      el.sessionFormSecretNotes.value = session.secretNotes || '';
+    } else {
+      el.sessionModalTitle.textContent = 'Log Game Session';
+      el.sessionFormId.value = '';
+      // Auto-increment session number
+      el.sessionFormNumber.value = campSessions.length + 1;
+      // Auto-save date it happened (defaults automatically to today's date)
+      el.sessionFormDate.value = todayStr;
+      // Default chapter is 'General' or active chapter filter
+      if (state.selectedChapter && state.selectedChapter !== '__new__') {
+        el.sessionFormChapterSelect.value = state.selectedChapter;
+      } else {
+        el.sessionFormChapterSelect.value = 'General';
+      }
+      el.sessionFormSummary.value = '';
+      el.sessionFormNotes.value = '';
+      el.sessionFormSecretNotes.value = '';
+    }
+
+    // DM Secret notes field visibility
+    el.sessionDmSecretNotesField.style.display = state.currentMode === 'dm' ? 'block' : 'none';
+
+    el.sessionModal.style.display = 'flex';
+    el.sessionFormTitle.focus();
+  }
+
+  function openChapterModal() {
+    el.chapterForm.reset();
+    el.chapterModal.style.display = 'flex';
+    el.chapterFormName.focus();
   }
 
   // --- TAB 4: ADVENTURING PARTY VIEW ---
@@ -2303,6 +2831,172 @@
     if (el.partyNewHeroBtn) {
       el.partyNewHeroBtn.addEventListener('click', () => {
         openCharacterModal();
+      });
+    }
+
+    // Sessions & Chapters Listeners
+    if (el.sidebarNewSessionBtn) {
+      el.sidebarNewSessionBtn.addEventListener('click', () => openSessionModal());
+    }
+    if (el.emptyStateNewSessionBtn) {
+      el.emptyStateNewSessionBtn.addEventListener('click', () => openSessionModal());
+    }
+    if (el.placeholderNewSessionBtn) {
+      el.placeholderNewSessionBtn.addEventListener('click', () => openSessionModal());
+    }
+    if (el.newSessionMenuBtn) {
+      el.newSessionMenuBtn.addEventListener('click', () => {
+        el.optionsDropdown.classList.remove('show');
+        openSessionModal();
+      });
+    }
+
+    if (el.sidebarNewChapterBtn) {
+      el.sidebarNewChapterBtn.addEventListener('click', () => openChapterModal());
+    }
+    if (el.addChapterMenuBtn) {
+      el.addChapterMenuBtn.addEventListener('click', () => {
+        el.optionsDropdown.classList.remove('show');
+        openChapterModal();
+      });
+    }
+
+    // Chapter Select in Session Modal (Existing, General, or New)
+    if (el.sessionFormChapterSelect) {
+      el.sessionFormChapterSelect.addEventListener('change', (e) => {
+        if (e.target.value === '__new__') {
+          el.sessionFormNewChapterWrapper.style.display = 'block';
+          el.sessionFormNewChapter.focus();
+        } else {
+          el.sessionFormNewChapterWrapper.style.display = 'none';
+          el.sessionFormNewChapter.value = '';
+        }
+      });
+    }
+    if (el.sessionToggleNewChapterBtn) {
+      el.sessionToggleNewChapterBtn.addEventListener('click', () => {
+        el.sessionFormChapterSelect.value = '__new__';
+        el.sessionFormNewChapterWrapper.style.display = 'block';
+        el.sessionFormNewChapter.focus();
+      });
+    }
+    if (el.sessionCancelNewChapterBtn) {
+      el.sessionCancelNewChapterBtn.addEventListener('click', () => {
+        el.sessionFormNewChapterWrapper.style.display = 'none';
+        el.sessionFormChapterSelect.value = 'General';
+        el.sessionFormNewChapter.value = '';
+      });
+    }
+
+    // Session Sort & Dropdown Filter
+    if (el.sessionSortSelect) {
+      el.sessionSortSelect.addEventListener('change', (e) => {
+        state.sessionSortOption = e.target.value;
+        renderSessionsList();
+      });
+    }
+    if (el.sessionChapterSelectFilter) {
+      el.sessionChapterSelectFilter.addEventListener('change', (e) => {
+        state.selectedChapter = e.target.value;
+        renderChapterFilters();
+        renderSessionsList();
+      });
+    }
+
+    // Edit and Delete Session
+    if (el.editSessionBtn) {
+      el.editSessionBtn.addEventListener('click', () => {
+        const session = state.sessions.find(s => s.id === state.selectedSessionId);
+        if (session) openSessionModal(session);
+      });
+    }
+    if (el.deleteSessionBtn) {
+      el.deleteSessionBtn.addEventListener('click', async () => {
+        const session = state.sessions.find(s => s.id === state.selectedSessionId);
+        if (!session) return;
+        if (confirm(`Are you sure you want to permanently delete Session #${session.sessionNumber}: "${session.title}"?`)) {
+          await api.deleteSession(session.id);
+          state.sessions = state.sessions.filter(s => s.id !== session.id);
+          state.selectedSessionId = null;
+          updateUI();
+        }
+      });
+    }
+
+    // Session Form Submit
+    if (el.sessionForm) {
+      el.sessionForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+
+        // Determine chapter
+        let chapter = el.sessionFormChapterSelect.value;
+        if (chapter === '__new__' || el.sessionFormNewChapter.value.trim()) {
+          chapter = el.sessionFormNewChapter.value.trim() || 'General';
+        }
+
+        // Gather attendees
+        const attendees = [];
+        el.sessionAttendeesPicker.querySelectorAll('input[type="checkbox"]:checked').forEach(cb => {
+          attendees.push(cb.value);
+        });
+
+        // Date defaults to today if blank
+        const dateVal = el.sessionFormDate.value || new Date().toISOString().slice(0, 10);
+
+        const sessionPayload = {
+          id: el.sessionFormId.value || undefined,
+          campaignId: state.activeCampaignId,
+          title: el.sessionFormTitle.value.trim(),
+          sessionNumber: parseInt(el.sessionFormNumber.value, 10) || 1,
+          date: dateVal,
+          chapter: chapter || 'General',
+          attendees,
+          summary: el.sessionFormSummary.value.trim(),
+          notes: el.sessionFormNotes.value,
+          secretNotes: el.sessionFormSecretNotes.value
+        };
+
+        const saved = await api.saveSession(sessionPayload);
+
+        // Update state sessions
+        const existingIdx = state.sessions.findIndex(s => s.id === saved.id);
+        if (existingIdx !== -1) {
+          state.sessions[existingIdx] = saved;
+        } else {
+          state.sessions.unshift(saved);
+        }
+
+        // Ensure campaign chapter list includes new chapter
+        if (saved.chapter && !state.chapters.includes(saved.chapter)) {
+          state.chapters.push(saved.chapter);
+        }
+
+        state.selectedSessionId = saved.id;
+        el.sessionModal.style.display = 'none';
+        updateUI();
+      });
+    }
+
+    // Standalone Chapter Form Submit
+    if (el.chapterForm) {
+      el.chapterForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const chapterName = el.chapterFormName.value.trim();
+        if (!chapterName) return;
+
+        const res = await api.createChapter(chapterName, state.activeCampaignId);
+        if (res && res.chapters) {
+          state.chapters = res.chapters;
+          const camp = state.campaigns.find(c => c.id === state.activeCampaignId);
+          if (camp) camp.chapters = res.chapters;
+        } else if (!state.chapters.includes(chapterName)) {
+          state.chapters.push(chapterName);
+        }
+
+        state.selectedChapter = chapterName;
+        el.chapterForm.reset();
+        el.chapterModal.style.display = 'none';
+        updateUI();
       });
     }
 

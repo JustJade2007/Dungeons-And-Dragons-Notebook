@@ -29,7 +29,8 @@ function getInitialData() {
     entries: [],
     characters: [],
     activeCharacterId: null,
-    customCategories: []
+    customCategories: [],
+    sessions: []
   };
 }
 
@@ -46,6 +47,11 @@ function loadData() {
       parsed.campaigns.forEach(c => {
         if (!c.mode) c.mode = 'dm';
         if (!c.system) c.system = 'D&D 5e';
+        if (!c.chapters || !Array.isArray(c.chapters)) {
+          c.chapters = ['General'];
+        } else if (!c.chapters.includes('General')) {
+          c.chapters.unshift('General');
+        }
         if (!c.settings) {
           c.settings = {
             allowDmSecrets: true,
@@ -61,6 +67,9 @@ function loadData() {
       }
       if (!parsed.customCategories || !Array.isArray(parsed.customCategories)) {
         parsed.customCategories = [];
+      }
+      if (!parsed.sessions || !Array.isArray(parsed.sessions)) {
+        parsed.sessions = [];
       }
       return parsed;
     }
@@ -106,10 +115,11 @@ app.use(express.static(publicDir));
 app.get('/api/health', (req, res) => {
   res.json({
     status: 'ok',
-    version: '0.2.1',
+    version: '0.2.6',
     mode: isPackaged ? 'executable' : 'node',
     entriesCount: database.entries.length,
     charactersCount: database.characters.length,
+    sessionsCount: database.sessions.length,
     activeCampaignId: database.activeCampaignId
   });
 });
@@ -333,6 +343,207 @@ app.post('/api/characters/:id/link-entry', (req, res) => {
   res.json({ success: true, character });
 });
 
+// --- SESSIONS & CHAPTERS CRUD ---
+
+// Get all sessions (optionally filtered by campaignId and chapter)
+app.get('/api/sessions', (req, res) => {
+  const targetCampaignId = req.query.campaignId || database.activeCampaignId;
+  const chapterFilter = req.query.chapter;
+
+  let filtered = database.sessions.filter(s => s.campaignId === targetCampaignId);
+
+  // 'General' includes everything by default, unless user specifically filtered by an individual chapter
+  if (chapterFilter && chapterFilter !== 'General' && chapterFilter !== 'all') {
+    filtered = filtered.filter(s => s.chapter === chapterFilter);
+  }
+
+  // Sort by sessionNumber or date or createdAt
+  filtered.sort((a, b) => {
+    if (b.sessionNumber !== undefined && a.sessionNumber !== undefined && b.sessionNumber !== a.sessionNumber) {
+      return b.sessionNumber - a.sessionNumber;
+    }
+    return new Date(b.date || b.createdAt).getTime() - new Date(a.date || a.createdAt).getTime();
+  });
+
+  res.json({ success: true, sessions: filtered });
+});
+
+// Create a new session note
+app.post('/api/sessions', (req, res) => {
+  const {
+    title,
+    chapter,
+    date,
+    sessionNumber,
+    summary,
+    notes,
+    secretNotes,
+    attendees,
+    campaignId
+  } = req.body;
+
+  if (!title || !title.trim()) {
+    return res.status(400).json({ error: 'Session title is required.' });
+  }
+
+  const now = new Date().toISOString();
+  const todayDateString = now.slice(0, 10); // YYYY-MM-DD
+  const effectiveCampaignId = campaignId || database.activeCampaignId;
+
+  // Chapter defaults to 'General' which includes everything
+  const assignedChapter = (chapter && chapter.trim()) ? chapter.trim() : 'General';
+
+  // Auto-save the date it happened: defaults to today if not explicitly provided
+  const sessionDate = (date && date.trim()) ? date.trim() : todayDateString;
+
+  // Calculate session number if not supplied
+  let num = parseInt(sessionNumber, 10);
+  if (isNaN(num)) {
+    const existingInCampaign = database.sessions.filter(s => s.campaignId === effectiveCampaignId);
+    num = existingInCampaign.length + 1;
+  }
+
+  // Ensure chapter is tracked in the campaign's chapters
+  const campaign = database.campaigns.find(c => c.id === effectiveCampaignId);
+  if (campaign) {
+    if (!campaign.chapters || !Array.isArray(campaign.chapters)) {
+      campaign.chapters = ['General'];
+    }
+    if (assignedChapter && !campaign.chapters.includes(assignedChapter)) {
+      campaign.chapters.push(assignedChapter);
+    }
+  }
+
+  const newSession = {
+    id: generateId('session'),
+    campaignId: effectiveCampaignId,
+    sessionNumber: num,
+    title: title.trim(),
+    chapter: assignedChapter,
+    date: sessionDate, // Auto-saved date it happened
+    summary: summary || '',
+    notes: notes || '',
+    secretNotes: secretNotes || '',
+    attendees: Array.isArray(attendees) ? attendees : [],
+    createdAt: now,
+    updatedAt: now
+  };
+
+  database.sessions.unshift(newSession);
+  saveData(database);
+
+  res.status(201).json(newSession);
+});
+
+// Update session note
+app.put('/api/sessions/:id', (req, res) => {
+  const { id } = req.params;
+  const index = database.sessions.findIndex(s => s.id === id);
+
+  if (index === -1) {
+    return res.status(404).json({ error: 'Session note not found.' });
+  }
+
+  const existing = database.sessions[index];
+  const updated = {
+    ...existing,
+    ...req.body,
+    id: existing.id,
+    campaignId: existing.campaignId,
+    createdAt: existing.createdAt,
+    updatedAt: new Date().toISOString()
+  };
+
+  if (updated.title) {
+    updated.title = updated.title.trim();
+  }
+  if (!updated.chapter || !updated.chapter.trim()) {
+    updated.chapter = 'General';
+  } else {
+    updated.chapter = updated.chapter.trim();
+  }
+  if (!updated.date || !updated.date.trim()) {
+    updated.date = new Date().toISOString().slice(0, 10);
+  }
+
+  // Ensure chapter is tracked in campaign
+  const campaign = database.campaigns.find(c => c.id === existing.campaignId);
+  if (campaign) {
+    if (!campaign.chapters || !Array.isArray(campaign.chapters)) {
+      campaign.chapters = ['General'];
+    }
+    if (updated.chapter && !campaign.chapters.includes(updated.chapter)) {
+      campaign.chapters.push(updated.chapter);
+    }
+  }
+
+  database.sessions[index] = updated;
+  saveData(database);
+
+  res.json(updated);
+});
+
+// Delete session note
+app.delete('/api/sessions/:id', (req, res) => {
+  const { id } = req.params;
+  const initialCount = database.sessions.length;
+  database.sessions = database.sessions.filter(s => s.id !== id);
+
+  if (database.sessions.length === initialCount) {
+    return res.status(404).json({ error: 'Session note not found.' });
+  }
+
+  saveData(database);
+  res.json({ success: true, deletedId: id });
+});
+
+// Get chapters for active campaign
+app.get('/api/chapters', (req, res) => {
+  const targetCampaignId = req.query.campaignId || database.activeCampaignId;
+  const campaign = database.campaigns.find(c => c.id === targetCampaignId);
+  const chapterSet = new Set(['General']);
+
+  if (campaign && Array.isArray(campaign.chapters)) {
+    campaign.chapters.forEach(ch => {
+      if (ch && ch.trim()) chapterSet.add(ch.trim());
+    });
+  }
+
+  // Also include any chapters currently in sessions
+  database.sessions
+    .filter(s => s.campaignId === targetCampaignId)
+    .forEach(s => {
+      if (s.chapter && s.chapter.trim()) chapterSet.add(s.chapter.trim());
+    });
+
+  res.json({ chapters: Array.from(chapterSet) });
+});
+
+// Create/add a new chapter name
+app.post('/api/chapters', (req, res) => {
+  const { name, campaignId } = req.body;
+  if (!name || !name.trim()) {
+    return res.status(400).json({ error: 'Chapter name is required.' });
+  }
+
+  const trimmed = name.trim();
+  const targetCampaignId = campaignId || database.activeCampaignId;
+  const campaign = database.campaigns.find(c => c.id === targetCampaignId);
+
+  if (campaign) {
+    if (!campaign.chapters || !Array.isArray(campaign.chapters)) {
+      campaign.chapters = ['General'];
+    }
+    if (!campaign.chapters.includes(trimmed)) {
+      campaign.chapters.push(trimmed);
+      saveData(database);
+    }
+  }
+
+  const allChapters = campaign ? campaign.chapters : ['General', trimmed];
+  res.status(201).json({ success: true, chapter: trimmed, chapters: allChapters });
+});
+
 // --- CAMPAIGNS & NOTEBOOKS ---
 
 // List all campaigns with summaries
@@ -340,13 +551,16 @@ app.get('/api/campaigns', (req, res) => {
   const summaries = database.campaigns.map(camp => {
     const entryCount = database.entries.filter(e => e.campaignId === camp.id).length;
     const charCount = database.characters.filter(c => c.campaignId === camp.id).length;
+    const sessionCount = database.sessions.filter(s => s.campaignId === camp.id).length;
     return {
       ...camp,
       mode: camp.mode || 'dm',
       system: camp.system || 'D&D 5e',
+      chapters: Array.isArray(camp.chapters) ? camp.chapters : ['General'],
       settings: camp.settings || { allowDmSecrets: true, autoLinkDiscoveries: true },
       entryCount,
-      charCount
+      charCount,
+      sessionCount
     };
   });
   res.json({
@@ -369,6 +583,7 @@ app.post('/api/campaigns', (req, res) => {
     description: description || '',
     mode: mode === 'player' ? 'player' : 'dm',
     system: system || 'D&D 5e',
+    chapters: ['General'],
     settings: {
       allowDmSecrets: settings?.allowDmSecrets !== undefined ? Boolean(settings.allowDmSecrets) : true,
       autoLinkDiscoveries: settings?.autoLinkDiscoveries !== undefined ? Boolean(settings.autoLinkDiscoveries) : true
@@ -380,7 +595,7 @@ app.post('/api/campaigns', (req, res) => {
   database.campaigns.push(newCampaign);
   database.activeCampaignId = newCampaign.id;
 
-  // If user is converting a temporary notepad session into this notebook, migrate entries & characters
+  // If user is converting a temporary notepad session into this notebook, migrate entries, characters & sessions
   if (convertTemporary) {
     database.entries.forEach(e => {
       if (!e.campaignId || e.campaignId === 'temp' || e.campaignId === 'temporary') {
@@ -392,6 +607,15 @@ app.post('/api/campaigns', (req, res) => {
       if (!c.campaignId || c.campaignId === 'temp' || c.campaignId === 'temporary') {
         c.campaignId = newCampaign.id;
         c.updatedAt = now;
+      }
+    });
+    database.sessions.forEach(s => {
+      if (!s.campaignId || s.campaignId === 'temp' || s.campaignId === 'temporary') {
+        s.campaignId = newCampaign.id;
+        s.updatedAt = now;
+        if (s.chapter && !newCampaign.chapters.includes(s.chapter)) {
+          newCampaign.chapters.push(s.chapter);
+        }
       }
     });
   }
@@ -423,9 +647,10 @@ app.post('/api/campaigns/switch', (req, res) => {
 app.delete('/api/campaigns/:id', (req, res) => {
   const { id } = req.params;
   database.campaigns = database.campaigns.filter(c => c.id !== id);
-  // Remove associated entries & characters
+  // Remove associated entries, characters & sessions
   database.entries = database.entries.filter(e => e.campaignId !== id);
   database.characters = database.characters.filter(c => c.campaignId !== id);
+  database.sessions = database.sessions.filter(s => s.campaignId !== id);
 
   if (database.activeCampaignId === id) {
     database.activeCampaignId = database.campaigns[0]?.id || null;
@@ -482,11 +707,12 @@ app.post('/api/import', (req, res) => {
 
   database = {
     campaigns: Array.isArray(importedData.campaigns) ? importedData.campaigns : getInitialData().campaigns,
-    activeCampaignId: importedData.activeCampaignId || 'camp_default',
+    activeCampaignId: importedData.activeCampaignId || null,
     entries: Array.isArray(importedData.entries) ? importedData.entries : [],
     characters: Array.isArray(importedData.characters) ? importedData.characters : [],
     activeCharacterId: importedData.activeCharacterId || null,
-    customCategories: Array.isArray(importedData.customCategories) ? importedData.customCategories : []
+    customCategories: Array.isArray(importedData.customCategories) ? importedData.customCategories : [],
+    sessions: Array.isArray(importedData.sessions) ? importedData.sessions : []
   };
 
   saveData(database);
@@ -605,46 +831,70 @@ function findAvailablePort(startPort, callback) {
   });
 }
 
-findAvailablePort(defaultPort, (err, port) => {
-  if (err) {
-    console.error('[Error] Could not find an available port:', err);
-    process.exit(1);
-  }
+function startServer(requestedPort = null, autoOpen = false) {
+  return new Promise((resolve, reject) => {
+    const portToUse = requestedPort !== null && requestedPort !== undefined ? requestedPort : defaultPort;
+    findAvailablePort(portToUse, (err, port) => {
+      if (err) return reject(err);
 
-  const server = app.listen(port, () => {
-    const url = `http://localhost:${port}`;
-    console.log('===================================================');
-    console.log('       DUNGEONS & DRAGONS NOTEBOOK');
-    console.log('===================================================');
-    console.log(`[Status] Server running at: ${url}`);
-    console.log(`[Mode]   ${isPackaged ? 'Desktop Application (.exe)' : 'Node.js Development'}`);
-    console.log(`[Data]   ${dataFilePath}`);
-    console.log('===================================================');
+      const server = app.listen(port, () => {
+        const url = `http://localhost:${port}`;
+        console.log('===================================================');
+        console.log('       DUNGEONS & DRAGONS NOTEBOOK');
+        console.log('===================================================');
+        console.log(`[Status] Server running at: ${url}`);
+        console.log(`[Mode]   ${isPackaged ? 'Desktop Application (.exe)' : 'Node.js Server'}`);
+        console.log(`[Data]   ${dataFilePath}`);
+        console.log('===================================================');
 
-    if (shouldAutoOpen) {
-      setTimeout(() => {
-        const forceWeb = process.argv.includes('--web');
-        if (forceWeb) {
-          openSystemBrowser(url);
-        } else {
-          launchAppWindow(url, () => {
-            if (isPackaged) {
-              shutdown();
+        if (autoOpen && shouldAutoOpen && !process.versions.electron) {
+          setTimeout(() => {
+            const forceWeb = process.argv.includes('--web');
+            if (forceWeb) {
+              openSystemBrowser(url);
+            } else {
+              launchAppWindow(url, () => {
+                if (isPackaged) {
+                  shutdown();
+                }
+              });
             }
-          });
+          }, 700);
         }
-      }, 700);
-    }
-  });
 
-  // Graceful shutdown handling
-  const shutdown = () => {
-    console.log('\n[Server] Shutting down gracefully...');
-    server.close(() => {
-      process.exit(0);
+        resolve({ server, port, url, dataFilePath });
+      });
+
+      // Graceful shutdown handling
+      const shutdown = () => {
+        console.log('\n[Server] Shutting down gracefully...');
+        server.close(() => {
+          process.exit(0);
+        });
+      };
+
+      process.on('SIGINT', shutdown);
+      process.on('SIGTERM', shutdown);
+
+      server.on('error', reject);
     });
-  };
+  });
+}
 
-  process.on('SIGINT', shutdown);
-  process.on('SIGTERM', shutdown);
-});
+// Auto-run if executed directly via Node.js CLI
+if (require.main === module && !process.versions.electron) {
+  const port = process.env.PORT ? parseInt(process.env.PORT, 10) : defaultPort;
+  startServer(port, true).catch(err => {
+    console.error('[Error] Server failed to start:', err);
+    process.exit(1);
+  });
+}
+
+module.exports = {
+  app,
+  startServer,
+  loadData,
+  saveData,
+  getInitialData,
+  database
+};
