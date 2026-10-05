@@ -3,7 +3,7 @@ const cors = require('cors');
 const fs = require('fs');
 const path = require('path');
 const http = require('http');
-const { exec } = require('child_process');
+const { exec, spawn } = require('child_process');
 
 const app = express();
 app.use(cors());
@@ -500,6 +500,82 @@ app.get('*', (req, res) => {
 const defaultPort = parseInt(process.env.PORT || '3000', 10);
 const shouldAutoOpen = !process.argv.includes('--no-open') && !process.env.CI;
 
+function findAppBrowserExecutable() {
+  if (process.platform === 'win32') {
+    const progFilesX86 = process.env['ProgramFiles(x86)'] || 'C:\\Program Files (x86)';
+    const progFiles = process.env['ProgramFiles'] || 'C:\\Program Files';
+    const localAppData = process.env['LocalAppData'] || '';
+
+    const candidates = [
+      path.join(progFilesX86, 'Microsoft\\Edge\\Application\\msedge.exe'),
+      path.join(progFiles, 'Microsoft\\Edge\\Application\\msedge.exe'),
+      path.join(localAppData, 'Microsoft\\Edge\\Application\\msedge.exe'),
+      path.join(progFiles, 'Google\\Chrome\\Application\\chrome.exe'),
+      path.join(progFilesX86, 'Google\\Chrome\\Application\\chrome.exe'),
+      path.join(localAppData, 'Google\\Chrome\\Application\\chrome.exe'),
+      path.join(progFiles, 'BraveSoftware\\Brave-Browser\\Application\\brave.exe'),
+      path.join(progFilesX86, 'BraveSoftware\\Brave-Browser\\Application\\brave.exe')
+    ];
+
+    for (const exePath of candidates) {
+      if (exePath && fs.existsSync(exePath)) {
+        return exePath;
+      }
+    }
+  }
+  return null;
+}
+
+function openSystemBrowser(url) {
+  const startCmd = process.platform === 'win32' ? `start ${url}` : `open ${url}`;
+  exec(startCmd, () => {});
+}
+
+function launchAppWindow(url, onExit) {
+  const browserExe = findAppBrowserExecutable();
+  const profileDir = path.join(dataDir, '.app-profile');
+
+  if (browserExe) {
+    console.log(`[Window] Launching standalone desktop app window via: ${browserExe}`);
+    const args = [
+      `--app=${url}`,
+      '--window-size=1440,900',
+      `--user-data-dir=${profileDir}`,
+      '--no-first-run',
+      '--no-default-browser-check',
+      '--disable-background-networking',
+      '--disable-sync'
+    ];
+
+    try {
+      const child = spawn(browserExe, args, {
+        detached: false,
+        stdio: 'ignore'
+      });
+
+      child.on('error', err => {
+        console.warn('[Window] Failed to launch desktop app window, opening system browser:', err.message);
+        openSystemBrowser(url);
+      });
+
+      child.on('exit', () => {
+        console.log('[Window] Application window closed by user.');
+        if (typeof onExit === 'function') {
+          onExit();
+        }
+      });
+
+      return child;
+    } catch (e) {
+      console.warn('[Window] Error launching app window, opening system browser:', e.message);
+      openSystemBrowser(url);
+    }
+  } else {
+    console.log('[Window] Chromium runtime not found for app mode, opening system browser...');
+    openSystemBrowser(url);
+  }
+}
+
 function findAvailablePort(startPort, callback) {
   const testServer = http.createServer();
   testServer.listen(startPort, () => {
@@ -527,15 +603,23 @@ findAvailablePort(defaultPort, (err, port) => {
     console.log('       DUNGEONS & DRAGONS NOTEBOOK');
     console.log('===================================================');
     console.log(`[Status] Server running at: ${url}`);
-    console.log(`[Mode]   ${isPackaged ? 'Executable Package' : 'Node.js Development'}`);
+    console.log(`[Mode]   ${isPackaged ? 'Desktop Application (.exe)' : 'Node.js Development'}`);
     console.log(`[Data]   ${dataFilePath}`);
     console.log('===================================================');
 
     if (shouldAutoOpen) {
       setTimeout(() => {
-        const startCmd = process.platform === 'win32' ? `start ${url}` : `open ${url}`;
-        exec(startCmd, () => {});
-      }, 800);
+        const forceWeb = process.argv.includes('--web');
+        if (forceWeb) {
+          openSystemBrowser(url);
+        } else {
+          launchAppWindow(url, () => {
+            if (isPackaged) {
+              shutdown();
+            }
+          });
+        }
+      }, 700);
     }
   });
 

@@ -59,6 +59,8 @@ tmp/
 temp/
 data/
 *.tmp
+.app-profile/
+*.app-profile/
 
 # Test Files & Test Runners
 test-website.bat

@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 > **Version Policy**: Project versioning remains strictly in the pre-1.0 series (`0.x.y`) until explicitly instructed to graduate to 1.0+.
 
+## [0.2.4] - 2026-10-05
+
+### Added
+- **Standalone Desktop Application Window**: Updated the executable launcher to start directly in a dedicated, frameless desktop application window (`--app` mode) rather than opening a tab in the system browser.
+  - Isolated application profile directory (`data/.app-profile`) preserving window state, dimensions, and local session memory.
+  - No browser address bar, navigation buttons, or tabs — operates as a clean, native desktop application.
+  - Automatic graceful server shutdown when the application window is closed by the user.
+  - Added support for `--web` flag to explicitly force launching in standard browser tab if desired.
+
+---
+
 ## [0.2.3] - 2026-10-05
 
 ### Added

@@ -63,11 +63,11 @@ Dungeons & Dragons Notebook helps you organize your games. It keeps track of cam
 
 ### Option 1: Standalone Windows Executable
 - Build or update the executable by running `build-exe.bat` or `npm run build:exe`.
-- Run the compiled application from `dist/dnd-notebook.exe`.
+- Run `dist/dnd-notebook.exe`. It automatically launches in its own dedicated, frameless desktop application window (with no browser address bar or tabs). When you close the window, the app terminates cleanly.
 
 ### Option 2: Local Web Server
 - Double-click `launch.bat` (or execute `npm install && npm start`).
-- The application will automatically detect an available port and open in your default browser.
+- The application automatically launches in a dedicated desktop app window (or use `npm start -- --web` to open in a standard browser tab).
 
 ### Verification & Testing
 - Run `test-website.bat` to test and launch the Node.js website environment.
