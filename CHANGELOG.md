@@ -9,6 +9,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.2.1] - 2026-10-05
+
+### Added
+- **Notebook Creation Mode Selection**: Player Mode or Dungeon Master (DM) Mode is now configured upon creating a notebook rather than via an ad-hoc quick toggle.
+- **Notebook Hub & Startup Prompt**: When launching the application or opening the website without an active notebook, users are presented with a welcome hub modal to:
+  - Create a new notebook with title, description, and selected role (DM Mode vs Player Mode).
+  - Open an existing notebook from a list showing role badges, entry counts, and modification dates.
+  - Launch an instant temporary scratchpad.
+- **Temporary Scratchpad Mode**: Enables immediate session note-taking without setting up a permanent notebook, with an alert banner and one-click "Save as Permanent Notebook" dialog to convert temporary notes at any time.
+- **Notebook Mode Indicators**: Header now displays an active status badge indicating the notebook's mode (`👑 DM Notebook`, `🛡️ Player Notebook`, or `⚡ Temporary Scratchpad`).
+
+### Changed
+- Replaced header quick toggle with dedicated notebook mode badge and Notebook Hub switcher.
+- Updated automated verification suite (`tests/verify-app.js`) to test DM/Player mode selection, scratchpad session creation, and permanent conversion.
+
+---
+
 ## [0.2.0] - 2026-10-05
 
 ### Added

@@ -54,8 +54,10 @@
     el.campaignBtn = document.getElementById('campaignBtn');
     el.activeCampaignName = document.getElementById('activeCampaignName');
     el.globalSearchInput = document.getElementById('globalSearchInput');
-    el.dmModeBtn = document.getElementById('dmModeBtn');
-    el.playerModeBtn = document.getElementById('playerModeBtn');
+    el.notebookModeBadge = document.getElementById('notebookModeBadge');
+    el.badgeDmIcon = document.getElementById('badgeDmIcon');
+    el.badgePlayerIcon = document.getElementById('badgePlayerIcon');
+    el.notebookModeLabel = document.getElementById('notebookModeLabel');
     el.characterPill = document.getElementById('characterPill');
     el.activeCharAvatar = document.getElementById('activeCharAvatar');
     el.activeCharName = document.getElementById('activeCharName');
@@ -68,6 +70,11 @@
     el.manageCharactersBtn = document.getElementById('manageCharactersBtn');
     el.addCategoryBtn = document.getElementById('addCategoryBtn');
     el.resetDataBtn = document.getElementById('resetDataBtn');
+
+    // Temporary Notepad Banner
+    el.tempNotepadBanner = document.getElementById('tempNotepadBanner');
+    el.saveTempNotepadBtn = document.getElementById('saveTempNotepadBtn');
+    el.exitTempNotepadBtn = document.getElementById('exitTempNotepadBtn');
 
     // Sub Nav
     el.navTabs = document.querySelectorAll('.nav-tab');
@@ -180,11 +187,18 @@
     el.charFormAlignment = document.getElementById('charFormAlignment');
     el.charFormNotes = document.getElementById('charFormNotes');
 
-    el.campaignModal = document.getElementById('campaignModal');
-    el.campaignsContainer = document.getElementById('campaignsContainer');
-    el.newCampaignForm = document.getElementById('newCampaignForm');
-    el.newCampaignName = document.getElementById('newCampaignName');
-    el.newCampaignDesc = document.getElementById('newCampaignDesc');
+    el.welcomeHubModal = document.getElementById('welcomeHubModal');
+    el.createNotebookForm = document.getElementById('createNotebookForm');
+    el.newNotebookName = document.getElementById('newNotebookName');
+    el.newNotebookDesc = document.getElementById('newNotebookDesc');
+    el.savedNotebooksList = document.getElementById('savedNotebooksList');
+    el.startTempNotepadBtn = document.getElementById('startTempNotepadBtn');
+    el.closeHubBtn = document.getElementById('closeHubBtn');
+
+    el.saveTempModal = document.getElementById('saveTempModal');
+    el.saveTempForm = document.getElementById('saveTempForm');
+    el.saveTempName = document.getElementById('saveTempName');
+    el.saveTempDesc = document.getElementById('saveTempDesc');
 
     el.categoryModal = document.getElementById('categoryModal');
     el.categoryForm = document.getElementById('categoryForm');
@@ -256,12 +270,16 @@
       });
       return await res.json();
     },
-    async createCampaign(name, description) {
+    async createCampaign(name, description, mode = 'dm', convertTemporary = false) {
       const res = await fetch('/api/campaigns', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, description })
+        body: JSON.stringify({ name, description, mode, convertTemporary })
       });
+      return await res.json();
+    },
+    async deleteCampaign(id) {
+      const res = await fetch(`/api/campaigns/${id}`, { method: 'DELETE' });
       return await res.json();
     },
     async switchCampaign(campaignId) {
@@ -305,11 +323,30 @@
     try {
       const data = await api.fetchAllData();
       state.campaigns = data.campaigns || [];
-      state.activeCampaignId = data.activeCampaignId || state.campaigns[0]?.id || 'camp_default';
+      state.activeCampaignId = data.activeCampaignId || null;
       state.entries = data.entries || [];
       state.characters = data.characters || [];
       state.activeCharacterId = data.activeCharacterId || null;
       state.customCategories = data.customCategories || [];
+
+      // Determine notebook mode from active campaign
+      if (state.activeCampaignId === 'temporary') {
+        state.currentMode = 'dm';
+      } else if (state.activeCampaignId) {
+        const camp = state.campaigns.find(c => c.id === state.activeCampaignId);
+        if (camp) {
+          state.currentMode = camp.mode || 'dm';
+        } else {
+          state.activeCampaignId = null;
+        }
+      }
+
+      // If no notebook is chosen yet, open the Notebook Hub!
+      if (!state.activeCampaignId) {
+        openWelcomeHub(false); // false = cannot close without picking an option
+      } else {
+        closeWelcomeHub();
+      }
 
       // Select first character if none active
       if (!state.activeCharacterId && state.characters.length > 0) {
@@ -320,6 +357,83 @@
     } catch (err) {
       console.error('Failed to load application data:', err);
     }
+  }
+
+  // --- WELCOME & NOTEBOOK HUB ---
+  function openWelcomeHub(canClose = true) {
+    renderSavedNotebooksList();
+    el.closeHubBtn.style.display = canClose ? 'block' : 'none';
+    el.welcomeHubModal.style.display = 'flex';
+  }
+
+  function closeWelcomeHub() {
+    el.welcomeHubModal.style.display = 'none';
+  }
+
+  function renderSavedNotebooksList() {
+    el.savedNotebooksList.innerHTML = '';
+    if (state.campaigns.length === 0) {
+      el.savedNotebooksList.innerHTML = `
+        <div class="empty-state" style="padding: 20px 10px;">
+          <p class="text-sm text-muted">No saved notebooks found. Create your first notebook on the left!</p>
+        </div>
+      `;
+      return;
+    }
+
+    state.campaigns.forEach(camp => {
+      const card = document.createElement('div');
+      card.className = 'saved-notebook-card';
+      const isDm = (camp.mode || 'dm') === 'dm';
+      const entryCount = state.entries.filter(e => e.campaignId === camp.id).length;
+
+      card.innerHTML = `
+        <div class="saved-notebook-info">
+          <div class="saved-notebook-title">${escapeHTML(camp.name)}</div>
+          <div class="saved-notebook-meta">
+            <span class="category-tag ${isDm ? 'cat-quest' : 'cat-location'}">${isDm ? '👑 DM Mode' : '🛡️ Player Mode'}</span>
+            <span>${entryCount} entries</span>
+            <span>• ${formatRelativeTime(camp.updatedAt || camp.createdAt)}</span>
+          </div>
+        </div>
+        <div class="saved-notebook-actions">
+          <button class="btn btn-xs btn-primary open-camp-btn">Open</button>
+          <button class="btn btn-xs btn-danger-ghost delete-camp-btn" title="Delete notebook">&times;</button>
+        </div>
+      `;
+
+      card.querySelector('.open-camp-btn').addEventListener('click', async (e) => {
+        e.stopPropagation();
+        await api.switchCampaign(camp.id);
+        state.activeCampaignId = camp.id;
+        state.currentMode = camp.mode || 'dm';
+        closeWelcomeHub();
+        updateUI();
+      });
+
+      card.querySelector('.delete-camp-btn').addEventListener('click', async (e) => {
+        e.stopPropagation();
+        if (confirm(`Permanently delete notebook "${camp.name}" and all its notes?`)) {
+          await api.deleteCampaign(camp.id);
+          state.campaigns = state.campaigns.filter(c => c.id !== camp.id);
+          state.entries = state.entries.filter(ent => ent.campaignId !== camp.id);
+          state.characters = state.characters.filter(ch => ch.campaignId !== camp.id);
+          if (state.activeCampaignId === camp.id) {
+            state.activeCampaignId = null;
+            openWelcomeHub(false);
+          } else {
+            renderSavedNotebooksList();
+          }
+          updateUI();
+        }
+      });
+
+      card.addEventListener('click', () => {
+        card.querySelector('.open-camp-btn').click();
+      });
+
+      el.savedNotebooksList.appendChild(card);
+    });
   }
 
   // --- UI UPDATES ---
@@ -345,25 +459,45 @@
   }
 
   function updateCampaignHeader() {
-    const activeCamp = state.campaigns.find(c => c.id === state.activeCampaignId);
-    el.activeCampaignName.textContent = activeCamp ? activeCamp.name : 'Default Campaign';
+    if (state.activeCampaignId === 'temporary') {
+      el.activeCampaignName.textContent = '⚡ Temporary Notepad';
+      el.tempNotepadBanner.style.display = 'flex';
+    } else {
+      el.tempNotepadBanner.style.display = 'none';
+      const activeCamp = state.campaigns.find(c => c.id === state.activeCampaignId);
+      el.activeCampaignName.textContent = activeCamp ? activeCamp.name : 'Choose Notebook';
+    }
   }
 
   function updateModeDisplay() {
-    if (state.currentMode === 'dm') {
-      el.dmModeBtn.classList.add('active');
-      el.playerModeBtn.classList.remove('active');
+    // Mode badge in header
+    if (state.activeCampaignId === 'temporary') {
+      el.notebookModeBadge.className = 'notebook-mode-badge temp-badge';
+      el.badgeDmIcon.style.display = 'none';
+      el.badgePlayerIcon.style.display = 'none';
+      el.notebookModeLabel.textContent = '⚡ Temporary Scratchpad';
       el.modeStatusBanner.className = 'mode-status-banner dm-active';
-      el.modeStatusText.textContent = 'DM Mode: Full campaign oversight enabled. Secret notes revealed.';
+      el.modeStatusText.textContent = 'Temporary Scratchpad: Notes are stored in temporary session memory.';
       el.dmSecretNotesField.style.display = 'block';
       el.detailSecretNotesSection.style.display = 'block';
-    } else {
-      el.playerModeBtn.classList.add('active');
-      el.dmModeBtn.classList.remove('active');
+    } else if (state.currentMode === 'player') {
+      el.notebookModeBadge.className = 'notebook-mode-badge player-badge';
+      el.badgeDmIcon.style.display = 'none';
+      el.badgePlayerIcon.style.display = 'inline-block';
+      el.notebookModeLabel.textContent = '🛡️ Player Notebook';
       el.modeStatusBanner.className = 'mode-status-banner player-active';
-      el.modeStatusText.textContent = 'Player Mode: Journal tracking active. DM secret notes redacted.';
+      el.modeStatusText.textContent = 'Player Notebook: Journal tracking active. DM secret notes redacted.';
       el.dmSecretNotesField.style.display = 'none';
       el.detailSecretNotesSection.style.display = 'none';
+    } else {
+      el.notebookModeBadge.className = 'notebook-mode-badge dm-badge';
+      el.badgeDmIcon.style.display = 'inline-block';
+      el.badgePlayerIcon.style.display = 'none';
+      el.notebookModeLabel.textContent = '👑 DM Notebook';
+      el.modeStatusBanner.className = 'mode-status-banner dm-active';
+      el.modeStatusText.textContent = 'DM Notebook: Full campaign oversight enabled. Secret notes revealed.';
+      el.dmSecretNotesField.style.display = 'block';
+      el.detailSecretNotesSection.style.display = 'block';
     }
 
     // Active Character Pill
@@ -1725,14 +1859,58 @@
       }
     });
 
-    // Campaign Manager
-    el.campaignBtn.addEventListener('click', openCampaignModal);
-    el.newCampaignForm.addEventListener('submit', async e => {
+    // Notebook Hub & Switcher
+    el.campaignBtn.addEventListener('click', () => openWelcomeHub(Boolean(state.activeCampaignId)));
+    el.closeHubBtn.addEventListener('click', () => closeWelcomeHub());
+
+    // Create Notebook Form (with DM/Player mode choice)
+    el.createNotebookForm.addEventListener('submit', async e => {
       e.preventDefault();
-      const newCamp = await api.createCampaign(el.newCampaignName.value.trim(), el.newCampaignDesc.value.trim());
+      const name = el.newNotebookName.value.trim();
+      const desc = el.newNotebookDesc.value.trim();
+      const mode = document.querySelector('input[name="notebookRoleChoice"]:checked')?.value || 'dm';
+
+      const newCamp = await api.createCampaign(name, desc, mode, false);
       state.campaigns.push(newCamp);
       state.activeCampaignId = newCamp.id;
-      el.campaignModal.style.display = 'none';
+      state.currentMode = mode;
+      el.createNotebookForm.reset();
+      closeWelcomeHub();
+      updateUI();
+    });
+
+    // Start Temporary Scratchpad
+    el.startTempNotepadBtn.addEventListener('click', () => {
+      state.activeCampaignId = 'temporary';
+      state.currentMode = 'dm';
+      closeWelcomeHub();
+      updateUI();
+    });
+
+    // Save Temporary Scratchpad as Permanent Notebook
+    el.saveTempNotepadBtn.addEventListener('click', () => {
+      el.saveTempForm.reset();
+      el.saveTempModal.style.display = 'flex';
+      el.saveTempName.focus();
+    });
+
+    el.exitTempNotepadBtn.addEventListener('click', () => {
+      openWelcomeHub(true);
+    });
+
+    el.saveTempForm.addEventListener('submit', async e => {
+      e.preventDefault();
+      const name = el.saveTempName.value.trim();
+      const desc = el.saveTempDesc.value.trim();
+      const mode = document.querySelector('input[name="saveTempModeChoice"]:checked')?.value || 'dm';
+
+      const newCamp = await api.createCampaign(name, desc, mode, true);
+      state.campaigns.push(newCamp);
+      state.activeCampaignId = newCamp.id;
+      state.currentMode = mode;
+      el.saveTempModal.style.display = 'none';
+
+      // Reload data to reflect converted entries
       await loadInitialData();
     });
 

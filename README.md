@@ -17,9 +17,11 @@ Dungeons & Dragons Notebook helps you organize your games. It keeps track of cam
 - Use `@` to drop in-text mentions that automatically ping and hyperlink other notebook entries.
 - Track bidirectional backlinks to see everywhere an entry gets referenced across the entire campaign.
 
-### 3. User Modes
-- **DM Mode**: Unlock full access to every campaign entry, hidden notes, world hierarchy, encounter prep, and the main story arcs.
-- **Player Mode**: Keep things focused on the characters. Check active character stats and notes, let the system automatically link viewed entries to the right character, and switch between characters in seconds.### 4. Visualization & Hierarchy
+### 3. User Modes & Notebook Roles
+- **Mode Selected Upon Creation**: Rather than a temporary quick toggle, each campaign notebook is configured upon creation as either a **Dungeon Master (DM) Notebook** or a **Player Notebook**.
+- **DM Mode**: Unlock full access to every campaign entry, hidden DM secret notes, world hierarchy, encounter prep, and the main story arcs.
+- **Player Mode**: Keep things focused on character journals. Check active hero stats and notes, let the system automatically link viewed entries to the active character dossier, and switch between characters in seconds.
+- **Temporary Scratchpad**: Launch an instant, unsaved session notepad on startup or at any time, with the ability to convert and save it into a permanent DM or Player notebook.
 - **Association Trees**: Visual relationship graphs for selected entries or the entire campaign.
 - **Parent-Child Hierarchy**: Organize regions into settlements, settlements into buildings, factions into branches, etc.
 - **Family Trees**: Dedicated genealogical tree generation for families, dynasties, and lineages.
@@ -97,4 +99,4 @@ Dungeons-And-Dragons-Notebook/
 
 ## Current Version
 
-- **Version**: `0.2.0` (Pre-1.0 Core Notebook & Cross-Referencing Feature Release)
+- **Version**: `0.2.1` (Pre-1.0 Notebook Hub, Mode Creation Binding & Temporary Scratchpad Release)

@@ -23,18 +23,9 @@ if (!fs.existsSync(dataDir)) {
 
 // Default clean state - ZERO template or example entries
 function getInitialData() {
-  const now = new Date().toISOString();
   return {
-    campaigns: [
-      {
-        id: 'camp_default',
-        name: 'Default Campaign',
-        description: 'Primary campaign notebook',
-        createdAt: now,
-        updatedAt: now
-      }
-    ],
-    activeCampaignId: 'camp_default',
+    campaigns: [],
+    activeCampaignId: null,
     entries: [],
     characters: [],
     activeCharacterId: null,
@@ -50,16 +41,16 @@ function loadData() {
       const parsed = JSON.parse(content);
       // Guarantee valid structure
       if (!parsed.campaigns || !Array.isArray(parsed.campaigns)) {
-        parsed.campaigns = getInitialData().campaigns;
+        parsed.campaigns = [];
       }
+      parsed.campaigns.forEach(c => {
+        if (!c.mode) c.mode = 'dm';
+      });
       if (!parsed.entries || !Array.isArray(parsed.entries)) {
         parsed.entries = [];
       }
       if (!parsed.characters || !Array.isArray(parsed.characters)) {
         parsed.characters = [];
-      }
-      if (!parsed.activeCampaignId) {
-        parsed.activeCampaignId = parsed.campaigns[0]?.id || 'camp_default';
       }
       if (!parsed.customCategories || !Array.isArray(parsed.customCategories)) {
         parsed.customCategories = [];
@@ -108,7 +99,7 @@ app.use(express.static(publicDir));
 app.get('/api/health', (req, res) => {
   res.json({
     status: 'ok',
-    version: '0.2.0',
+    version: '0.2.1',
     mode: isPackaged ? 'executable' : 'node',
     entriesCount: database.entries.length,
     charactersCount: database.characters.length,
@@ -335,12 +326,31 @@ app.post('/api/characters/:id/link-entry', (req, res) => {
   res.json({ success: true, character });
 });
 
-// --- CAMPAIGNS ---
+// --- CAMPAIGNS & NOTEBOOKS ---
 
+// List all campaigns with summaries
+app.get('/api/campaigns', (req, res) => {
+  const summaries = database.campaigns.map(camp => {
+    const entryCount = database.entries.filter(e => e.campaignId === camp.id).length;
+    const charCount = database.characters.filter(c => c.campaignId === camp.id).length;
+    return {
+      ...camp,
+      mode: camp.mode || 'dm',
+      entryCount,
+      charCount
+    };
+  });
+  res.json({
+    campaigns: summaries,
+    activeCampaignId: database.activeCampaignId
+  });
+});
+
+// Create notebook / campaign (with DM/Player mode and optional temporary notepad migration)
 app.post('/api/campaigns', (req, res) => {
-  const { name, description } = req.body;
+  const { name, description, mode, convertTemporary } = req.body;
   if (!name || !name.trim()) {
-    return res.status(400).json({ error: 'Campaign name is required.' });
+    return res.status(400).json({ error: 'Notebook name is required.' });
   }
 
   const now = new Date().toISOString();
@@ -348,19 +358,43 @@ app.post('/api/campaigns', (req, res) => {
     id: generateId('camp'),
     name: name.trim(),
     description: description || '',
+    mode: mode === 'player' ? 'player' : 'dm',
     createdAt: now,
     updatedAt: now
   };
 
   database.campaigns.push(newCampaign);
   database.activeCampaignId = newCampaign.id;
-  saveData(database);
 
+  // If user is converting a temporary notepad session into this notebook, migrate entries & characters
+  if (convertTemporary) {
+    database.entries.forEach(e => {
+      if (!e.campaignId || e.campaignId === 'temp' || e.campaignId === 'temporary') {
+        e.campaignId = newCampaign.id;
+        e.updatedAt = now;
+      }
+    });
+    database.characters.forEach(c => {
+      if (!c.campaignId || c.campaignId === 'temp' || c.campaignId === 'temporary') {
+        c.campaignId = newCampaign.id;
+        c.updatedAt = now;
+      }
+    });
+  }
+
+  saveData(database);
   res.status(201).json(newCampaign);
 });
 
+// Switch active campaign or set to null (exit to notebook selector)
 app.post('/api/campaigns/switch', (req, res) => {
   const { campaignId } = req.body;
+  if (campaignId === null || campaignId === 'temp' || campaignId === 'temporary') {
+    database.activeCampaignId = campaignId;
+    saveData(database);
+    return res.json({ success: true, activeCampaignId: campaignId });
+  }
+
   const campaign = database.campaigns.find(c => c.id === campaignId);
   if (!campaign) {
     return res.status(404).json({ error: 'Campaign not found.' });
@@ -368,7 +402,23 @@ app.post('/api/campaigns/switch', (req, res) => {
 
   database.activeCampaignId = campaignId;
   saveData(database);
-  res.json({ success: true, activeCampaignId: campaignId });
+  res.json({ success: true, activeCampaignId: campaignId, campaign });
+});
+
+// Delete a campaign
+app.delete('/api/campaigns/:id', (req, res) => {
+  const { id } = req.params;
+  database.campaigns = database.campaigns.filter(c => c.id !== id);
+  // Remove associated entries & characters
+  database.entries = database.entries.filter(e => e.campaignId !== id);
+  database.characters = database.characters.filter(c => c.campaignId !== id);
+
+  if (database.activeCampaignId === id) {
+    database.activeCampaignId = database.campaigns[0]?.id || null;
+  }
+
+  saveData(database);
+  res.json({ success: true, deletedId: id });
 });
 
 // --- CUSTOM CATEGORIES ---

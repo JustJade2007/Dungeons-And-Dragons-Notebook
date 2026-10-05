@@ -54,22 +54,15 @@
 
       <!-- Right Header: Mode Switcher, Active Character, New Entry, Menu -->
       <div class="header-right">
-        <!-- Mode Switcher -->
-        <div class="mode-switcher-container">
-          <div class="mode-toggle" id="modeToggle">
-            <button id="dmModeBtn" class="mode-btn active" data-mode="dm" title="Dungeon Master Mode: Full campaign access, reveal secret notes, master controls">
-              <svg viewBox="0 0 24 24" width="15" height="15" stroke="currentColor" stroke-width="2" fill="none">
-                <path d="M2 4l3 12h14l3-12-6 7-4-7-4 7-6-7zm3 16h14v2H5z"/>
-              </svg>
-              <span>DM Mode</span>
-            </button>
-            <button id="playerModeBtn" class="mode-btn" data-mode="player" title="Player Mode: Character-centric journal, automatic linking, redacts DM secrets">
-              <svg viewBox="0 0 24 24" width="15" height="15" stroke="currentColor" stroke-width="2" fill="none">
-                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
-              </svg>
-              <span>Player Mode</span>
-            </button>
-          </div>
+        <!-- Notebook Mode Badge (Configured on notebook creation) -->
+        <div id="notebookModeBadge" class="notebook-mode-badge dm-badge" title="Notebook Mode chosen during notebook creation">
+          <svg id="badgeDmIcon" viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none">
+            <path d="M2 4l3 12h14l3-12-6 7-4-7-4 7-6-7zm3 16h14v2H5z"/>
+          </svg>
+          <svg id="badgePlayerIcon" viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none" style="display: none;">
+            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+          </svg>
+          <span id="notebookModeLabel">DM Notebook</span>
         </div>
 
         <!-- Active Character Pill (in Player Mode or DM oversight) -->
@@ -138,6 +131,18 @@
         </div>
       </div>
     </header>
+
+    <!-- Temporary Notepad Alert Banner -->
+    <div id="tempNotepadBanner" class="temp-notepad-banner" style="display: none;">
+      <div class="temp-banner-left">
+        <span class="temp-badge-pill">⚡ Temporary Scratchpad</span>
+        <span class="temp-text">Notes are active in temporary session memory and not yet saved to a permanent notebook.</span>
+      </div>
+      <div class="temp-banner-right">
+        <button id="saveTempNotepadBtn" class="btn btn-sm btn-primary glow-btn">Save as Permanent Notebook</button>
+        <button id="exitTempNotepadBtn" class="btn btn-sm btn-secondary">Open Notebook Hub</button>
+      </div>
+    </div>
 
     <!-- Sub-header: Navigation Tabs -->
     <nav class="sub-nav">
@@ -694,31 +699,141 @@
       </div>
     </div>
 
-    <!-- 3. CAMPAIGN MANAGEMENT MODAL -->
-    <div id="campaignModal" class="modal-backdrop" style="display: none;">
+    <!-- 3. WELCOME & NOTEBOOK HUB MODAL (Startup / Notebook Selector) -->
+    <div id="welcomeHubModal" class="modal-backdrop" style="display: none;">
+      <div class="modal-dialog modal-lg hub-dialog">
+        <header class="modal-header hub-header">
+          <div class="hub-header-brand">
+            <span class="hub-logo">Codex</span>
+            <div>
+              <h2 class="modal-title">Tabletop Campaign Notebook Hub</h2>
+              <p class="text-sm text-muted">Create or open a dedicated campaign notebook, or start an instant temporary scratchpad.</p>
+            </div>
+          </div>
+          <button class="modal-close-btn" id="closeHubBtn" title="Close" style="display: none;">&times;</button>
+        </header>
+
+        <div class="modal-body hub-body">
+          <div class="hub-grid">
+            <!-- Option 1: Create New Notebook -->
+            <div class="hub-card primary-hub-card">
+              <div class="hub-card-header">
+                <span class="hub-card-icon">✨</span>
+                <h3>Create New Notebook</h3>
+              </div>
+              <p class="hub-card-desc">Start a structured campaign notebook. Choose whether this notebook is for DM campaign oversight or Player character tracking.</p>
+              
+              <form id="createNotebookForm" class="hub-form">
+                <div class="form-group">
+                  <label for="newNotebookName">Notebook / Campaign Title <span class="required">*</span></label>
+                  <input type="text" id="newNotebookName" placeholder="e.g. Curse of Strahd, Netheril Chronicles" required autocomplete="off">
+                </div>
+
+                <div class="form-group">
+                  <label for="newNotebookDesc">Description (optional)</label>
+                  <input type="text" id="newNotebookDesc" placeholder="e.g. Friday group, Chapter 1" autocomplete="off">
+                </div>
+
+                <!-- Notebook Mode Choice: DM vs Player -->
+                <div class="form-group">
+                  <label>Notebook Role & Mode <span class="required">*</span></label>
+                  <div class="mode-choice-grid">
+                    <label class="mode-choice-card active">
+                      <input type="radio" name="notebookRoleChoice" value="dm" checked>
+                      <div class="mode-choice-content">
+                        <span class="mode-choice-title">👑 Dungeon Master Mode</span>
+                        <span class="mode-choice-desc">Full campaign control, DM secret notes, world hierarchy & encounter prep.</span>
+                      </div>
+                    </label>
+
+                    <label class="mode-choice-card">
+                      <input type="radio" name="notebookRoleChoice" value="player">
+                      <div class="mode-choice-content">
+                        <span class="mode-choice-title">🛡️ Player Mode</span>
+                        <span class="mode-choice-desc">Hero journal, active character dossier, automatic discovery linking, DM secrets redacted.</span>
+                      </div>
+                    </label>
+                  </div>
+                </div>
+
+                <button type="submit" class="btn btn-primary glow-btn hub-action-btn">Create & Open Notebook</button>
+              </form>
+            </div>
+
+            <!-- Option 2: Open Existing Notebook -->
+            <div class="hub-card">
+              <div class="hub-card-header">
+                <span class="hub-card-icon">📂</span>
+                <h3>Saved Notebooks</h3>
+              </div>
+              <p class="hub-card-desc">Select an existing campaign notebook to resume your notes.</p>
+              
+              <div class="saved-notebooks-list" id="savedNotebooksList">
+                <!-- Dynamically populated -->
+              </div>
+            </div>
+
+            <!-- Option 3: Temporary Scratchpad -->
+            <div class="hub-card temp-hub-card">
+              <div class="hub-card-header">
+                <span class="hub-card-icon">⚡</span>
+                <h3>Quick Temporary Notepad</h3>
+              </div>
+              <p class="hub-card-desc">Need to take immediate session notes without setting up a campaign? Launch an instant scratchpad. You can convert and save it to a permanent notebook at any time.</p>
+              
+              <div class="temp-hub-action">
+                <button type="button" id="startTempNotepadBtn" class="btn btn-secondary glow-btn hub-action-btn">Launch Temporary Notepad</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 4. SAVE TEMPORARY NOTEPAD MODAL -->
+    <div id="saveTempModal" class="modal-backdrop" style="display: none;">
       <div class="modal-dialog">
         <header class="modal-header">
-          <h2 class="modal-title">Campaign Manager</h2>
-          <button class="modal-close-btn" data-close-modal="campaignModal">&times;</button>
+          <h2 class="modal-title">Save Temporary Notepad as Notebook</h2>
+          <button class="modal-close-btn" data-close-modal="saveTempModal">&times;</button>
         </header>
-        <div class="modal-body">
-          <div class="campaign-list" id="campaignsContainer"></div>
+        <form id="saveTempForm" class="modal-body">
+          <p class="text-sm text-secondary">All entries and notes created during this temporary session will be permanently saved into your new notebook.</p>
           
-          <hr class="modal-divider">
-          
-          <h4>Create New Campaign</h4>
-          <form id="newCampaignForm">
-            <div class="form-group">
-              <label for="newCampaignName">Campaign Title</label>
-              <input type="text" id="newCampaignName" placeholder="e.g. Curse of Strahd, Descent into Avernus" required autocomplete="off">
+          <div class="form-group">
+            <label for="saveTempName">Notebook Title <span class="required">*</span></label>
+            <input type="text" id="saveTempName" placeholder="e.g. Session 1 Chronicles" required autocomplete="off">
+          </div>
+
+          <div class="form-group">
+            <label for="saveTempDesc">Description (optional)</label>
+            <input type="text" id="saveTempDesc" placeholder="e.g. Goblin Ambush notes" autocomplete="off">
+          </div>
+
+          <div class="form-group">
+            <label>Notebook Role & Mode <span class="required">*</span></label>
+            <div class="mode-choice-grid">
+              <label class="mode-choice-card active">
+                <input type="radio" name="saveTempModeChoice" value="dm" checked>
+                <div class="mode-choice-content">
+                  <span class="mode-choice-title">👑 Dungeon Master Mode</span>
+                </div>
+              </label>
+
+              <label class="mode-choice-card">
+                <input type="radio" name="saveTempModeChoice" value="player">
+                <div class="mode-choice-content">
+                  <span class="mode-choice-title">🛡️ Player Mode</span>
+                </div>
+              </label>
             </div>
-            <div class="form-group">
-              <label for="newCampaignDesc">Description (optional)</label>
-              <input type="text" id="newCampaignDesc" placeholder="e.g. Tabletop Friday group" autocomplete="off">
-            </div>
-            <button type="submit" class="btn btn-primary">Create Campaign</button>
-          </form>
-        </div>
+          </div>
+
+          <footer class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-close-modal="saveTempModal">Cancel</button>
+            <button type="submit" class="btn btn-primary glow-btn">Save to Permanent Notebook</button>
+          </footer>
+        </form>
       </div>
     </div>
 
