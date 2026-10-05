@@ -44,8 +44,25 @@ Dungeons & Dragons Notebook helps you organize your games. It keeps track of cam
 - Cloud save integrations (e.g., Google Drive) enabling campaign sync and sharing.
 
 ### 9. Deployment Options
-- **Desktop Application**: Packaged standalone executable (`.exe`) for Windows.
-- **Web Application**: Accessible via modern web browsers for cross-platform access.
+- **Desktop Application**: Packaged standalone executable (`.exe`) for Windows located in `dist/dnd-notebook.exe`.
+- **Web Application**: Node.js/Express web application running on `http://localhost:3000`.
+
+---
+
+## Running the Application
+
+### Option 1: Standalone Windows Executable
+- Build or update the executable by running `build-exe.bat` or `npm run build:exe`.
+- Run the compiled application from `dist/dnd-notebook.exe`.
+
+### Option 2: Local Web Server
+- Double-click `launch.bat` (or execute `npm install && npm start`).
+- The application will automatically detect an available port and open in your default browser.
+
+### Verification & Testing
+- Run `test-website.bat` to test and launch the Node.js website environment.
+- Run `test-exe.bat` to test and launch the standalone Windows executable.
+- Run `npm test` to execute the automated verification test suite.
 
 ---
 
@@ -54,15 +71,30 @@ Dungeons & Dragons Notebook helps you organize your games. It keeps track of cam
 ```text
 Dungeons-And-Dragons-Notebook/
 ├── .github/              # Issue templates and workflows
-├── .gitignore            # Git exclusion rules
+├── .gitignore            # Git exclusion rules (ignores build outputs, data, test runners)
 ├── CHANGELOG.md          # Release history and roadmap progress
 ├── README.md             # Project overview and specifications
 ├── SECURITY.md           # Security policies and key management
-└── TODO.md               # Feature checklist and development roadmap (local)
+├── TODO.md               # Feature checklist and development roadmap (local)
+├── server.js             # Express backend server and REST API
+├── package.json          # Node.js project manifest & scripts
+├── launch.bat            # Windows launcher script for web dev mode
+├── build-exe.bat         # Standalone Windows executable build script
+├── public/               # Frontend user interface assets
+│   ├── index.html        # Single-page application structure
+│   ├── css/
+│   │   └── style.css     # Dark fantasy design system & glassmorphism
+│   └── js/
+│       └── app.js        # Graph canvas, @ mention picker, and state management
+├── scripts/
+│   └── build-exe.js      # SEA packaging script
+├── tests/
+│   └── verify-app.js     # Automated verification suite
+└── dist/                 # Compiled Windows executable output
 ```
 
 ---
 
 ## Current Version
 
-- **Version**: `0.1.1` (Pre-1.0 Initial Development & Planning Phase)
+- **Version**: `0.2.0` (Pre-1.0 Core Notebook & Cross-Referencing Feature Release)

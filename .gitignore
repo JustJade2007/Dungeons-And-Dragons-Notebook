@@ -33,6 +33,9 @@ client_secret*.json
 .gemini/
 *antigravity*
 *.agent/
+.vibecoding/
+vibecoding/
+*vibecoding*
 
 # IDE & Editor Configs
 .vscode/
@@ -49,11 +52,18 @@ client_secret*.json
 Thumbs.db
 desktop.ini
 
-# Logs & Temporary Files
+# Logs, Runtime & Temporary Files
 logs/
 *.log
 tmp/
 temp/
+data/
+*.tmp
+
+# Test Files & Test Runners
+test-website.bat
+test-exe.bat
+test-*.bat
 
 # Task & Planning Files
 TODO.md

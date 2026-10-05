@@ -9,6 +9,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.2.0] - 2026-10-05
+
+### Added
+- **Note-Taking & Organization**: Complete CRUD support for notebook entries including titles, descriptions, categories (NPCs, Locations, Quests, Factions, Items, Lore, Custom), life status (Alive, Dead, Missing, Unknown, Resurrected), friendliness (Friendly, Neutral, Hostile), and dynamic key-value attributes.
+- **Cross-Referencing & Mentions**: Interactive `@` mention autocomplete popup when typing notes, interactive clickable links that navigate directly to referenced entries, and bidirectional backlink index tracking to display all incoming references per entry.
+- **User Modes**:
+  - **DM Mode**: Full administrative access with support for hidden/secret DM notes.
+  - **Player Mode**: Active hero selection, character profile switcher, automatic linking of viewed and created entries into the active character's journal dossier, and automatic redaction of DM secret notes.
+- **Visualization & Hierarchy**:
+  - Global association network and focused sub-graph visualization via interactive HTML5 Canvas with zoom/pan controls.
+  - Parent-child tree hierarchy for organizing nested locations, sub-quests, and faction branches.
+  - Genealogical family tree generator for tracking character lineages and dynasties.
+- **Deployment & Packaging**:
+  - Deployable Node.js website with Express REST API and automatic browser launching.
+  - Standalone Windows executable (`dist/dnd-notebook.exe`) bundled using Node Single Executable Application (SEA) and esbuild.
+  - Windows launcher scripts (`launch.bat` and `build-exe.bat`).
+  - Automated test runner files (`test-website.bat` and `test-exe.bat`) added and ignored in `.gitignore`.
+  - Automated verification test suite (`tests/verify-app.js`).
+
+### Changed
+- Updated `.gitignore` to ignore local runtime databases (`data/`), build outputs (`dist/`), and test launcher batch scripts (`test-*.bat`).
+- Updated `README.md` and `TODO.md` roadmap items.
+
+---
+
 ## [0.1.1] - 2026-10-05
 
 ### Changed

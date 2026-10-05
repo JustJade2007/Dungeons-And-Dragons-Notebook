@@ -1,0 +1,26 @@
+{
+  "name": "dungeons-and-dragons-notebook",
+  "version": "0.2.0",
+  "description": "A comprehensive note-taking and organization tool tailored for tabletop role-playing games and narrative-heavy campaigns.",
+  "main": "server.js",
+  "type": "commonjs",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js",
+    "test": "node tests/verify-app.js",
+    "build:exe": "node scripts/build-exe.js"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^4.21.2"
+  },
+  "devDependencies": {
+    "esbuild": "^0.25.0",
+    "postject": "^1.0.0-alpha.6"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/JustJade2007/Dungeons-And-Dragons-Notebook.git"
+  },
+  "license": "ISC"
+}
