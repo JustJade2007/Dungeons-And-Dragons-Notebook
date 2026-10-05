@@ -6,14 +6,14 @@
   <title>Dungeons & Dragons Notebook — Tabletop Campaign Organizer</title>
   <meta name="description" content="A rich tabletop campaign note-taking and organization tool featuring cross-referencing, association graphs, family trees, and distinct DM and Player modes.">
   
-  <!-- Google Fonts: Cinzel Decorative, Cinzel, Inter -->
+  <!-- Google Fonts: MedievalSharp, Almendra, Cinzel, Inter, JetBrains Mono -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700;800;900&family=Cinzel+Decorative:wght@700;900&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Almendra:ital,wght@0,400;0,700;1,400&family=Cinzel:wght@500;600;700;800;900&family=Cinzel+Decorative:wght@700;900&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&family=MedievalSharp&display=swap" rel="stylesheet">
   
   <link rel="stylesheet" href="css/style.css">
 </head>
-<body class="theme-dark">
+<body class="theme-whimsical">
   <div id="app" class="app-layout">
     <!-- Top Navigation Header -->
     <header class="app-header">
@@ -74,6 +74,12 @@
           </div>
         </div>
 
+        <!-- Theme / Style Switcher Pill -->
+        <button id="themeSwitcherBtn" class="theme-pill-btn" title="Cycle visual styles or configure appearance">
+          <span id="themeBtnIcon">🍄</span>
+          <span id="themeBtnLabel">Whimsical Fey</span>
+        </button>
+
         <!-- Action: New Entry -->
         <button id="newEntryBtn" class="btn btn-primary glow-btn">
           <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2.5" fill="none">
@@ -119,6 +125,12 @@
                 <path d="M4 9h16M4 15h16M10 3L8 21M16 3l-2 18"/>
               </svg>
               <span>Add Custom Category</span>
+            </button>
+            <button class="dropdown-item" id="openThemeSettingsBtn">
+              <svg viewBox="0 0 24 24" width="15" height="15" stroke="currentColor" stroke-width="2" fill="none">
+                <path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/>
+              </svg>
+              <span>Appearance & Styles</span>
             </button>
             <div class="dropdown-divider"></div>
             <button class="dropdown-item text-danger" id="resetDataBtn">
@@ -860,6 +872,129 @@
             <button type="submit" class="btn btn-primary">Add Category</button>
           </footer>
         </form>
+      </div>
+    </div>
+
+    <!-- 5. THEME & STYLE SETTINGS MODAL -->
+    <div id="themeSettingsModal" class="modal-backdrop" style="display: none;">
+      <div class="modal-dialog modal-lg theme-dialog">
+        <header class="modal-header">
+          <div class="theme-modal-title-group">
+            <h2 class="modal-title">Notebook Styles & Appearance</h2>
+            <p class="text-sm text-muted">Choose your preferred aesthetic flavor for your tabletop chronicle.</p>
+          </div>
+          <button class="modal-close-btn" data-close-modal="themeSettingsModal">&times;</button>
+        </header>
+        <div class="modal-body theme-modal-body">
+          <div class="theme-cards-grid">
+            <!-- Theme 1: Whimsical Fey & Goblin -->
+            <div class="theme-select-card" data-theme-id="whimsical">
+              <div class="theme-preview-box preview-whimsical">
+                <div class="preview-header">
+                  <span class="preview-dot"></span>
+                  <span class="preview-font-sample">Fey & Goblin</span>
+                </div>
+                <div class="preview-body">
+                  <div class="preview-line w-75"></div>
+                  <div class="preview-line w-50"></div>
+                  <div class="preview-chips">
+                    <span class="preview-chip chip-teal">Glow</span>
+                    <span class="preview-chip chip-amber">Spore</span>
+                  </div>
+                </div>
+              </div>
+              <div class="theme-card-info">
+                <div class="theme-card-title">
+                  <span class="theme-emoji">🍄</span>
+                  <strong>Whimsical Fey & Goblin</strong>
+                  <span class="theme-active-tag">Active</span>
+                </div>
+                <p class="theme-card-desc">Deep mossy green, enchanted forest glow, warm mushroom gold, playful rounded cards, and whimsical storybook lettering.</p>
+              </div>
+            </div>
+
+            <!-- Theme 2: Inked Parchment & Tavern Scroll -->
+            <div class="theme-select-card" data-theme-id="parchment">
+              <div class="theme-preview-box preview-parchment">
+                <div class="preview-header">
+                  <span class="preview-dot"></span>
+                  <span class="preview-font-sample">Inked Scroll</span>
+                </div>
+                <div class="preview-body">
+                  <div class="preview-line w-75"></div>
+                  <div class="preview-line w-50"></div>
+                  <div class="preview-chips">
+                    <span class="preview-chip chip-parchment">Wax</span>
+                    <span class="preview-chip chip-ink">Ink</span>
+                  </div>
+                </div>
+              </div>
+              <div class="theme-card-info">
+                <div class="theme-card-title">
+                  <span class="theme-emoji">📜</span>
+                  <strong>Inked Parchment & Scroll</strong>
+                  <span class="theme-active-tag">Active</span>
+                </div>
+                <p class="theme-card-desc">Sepia and warm tea-stained parchment, candlelit amber accents, hand-drawn flourishes, and classic medieval serif typography.</p>
+              </div>
+            </div>
+
+            <!-- Theme 3: Classic Obsidian & Dungeon -->
+            <div class="theme-select-card" data-theme-id="obsidian">
+              <div class="theme-preview-box preview-obsidian">
+                <div class="preview-header">
+                  <span class="preview-dot"></span>
+                  <span class="preview-font-sample">Dungeon Stone</span>
+                </div>
+                <div class="preview-body">
+                  <div class="preview-line w-75"></div>
+                  <div class="preview-line w-50"></div>
+                  <div class="preview-chips">
+                    <span class="preview-chip chip-gold">Gold</span>
+                    <span class="preview-chip chip-crimson">Ruby</span>
+                  </div>
+                </div>
+              </div>
+              <div class="theme-card-info">
+                <div class="theme-card-title">
+                  <span class="theme-emoji">⚔️</span>
+                  <strong>Classic Obsidian Dungeon</strong>
+                  <span class="theme-active-tag">Active</span>
+                </div>
+                <p class="theme-card-desc">Sleek obsidian slate, crisp gothic gold, blood-red highlights, and sharp authoritative Cinzel headings.</p>
+              </div>
+            </div>
+
+            <!-- Theme 4: Astral Sea & Spellbook -->
+            <div class="theme-select-card" data-theme-id="astral">
+              <div class="theme-preview-box preview-astral">
+                <div class="preview-header">
+                  <span class="preview-dot"></span>
+                  <span class="preview-font-sample">Astral Sea</span>
+                </div>
+                <div class="preview-body">
+                  <div class="preview-line w-75"></div>
+                  <div class="preview-line w-50"></div>
+                  <div class="preview-chips">
+                    <span class="preview-chip chip-cyan">Starlight</span>
+                    <span class="preview-chip chip-purple">Arcane</span>
+                  </div>
+                </div>
+              </div>
+              <div class="theme-card-info">
+                <div class="theme-card-title">
+                  <span class="theme-emoji">✨</span>
+                  <strong>Astral Sea & Spellbook</strong>
+                  <span class="theme-active-tag">Active</span>
+                </div>
+                <p class="theme-card-desc">Cosmic starlight indigo, arcane violet nebulae, glowing cyan runes, and mystical wizarding vibes.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+        <footer class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-close-modal="themeSettingsModal">Close</button>
+        </footer>
       </div>
     </div>
 

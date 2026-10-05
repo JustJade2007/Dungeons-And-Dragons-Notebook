@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 > **Version Policy**: Project versioning remains strictly in the pre-1.0 series (`0.x.y`) until explicitly instructed to graduate to 1.0+.
 
+## [0.2.2] - 2026-10-05
+
+### Added
+- **Whimsical Fantasy & Fey Aesthetic**: Styled the notebook with an organic tabletop fantasy flavor inspired by Goblin's Notebook, featuring deep enchanted moss tones, bioluminescent accents, warm mushroom amber glows, rounded organic cards, and playful typography (`MedievalSharp`).
+- **Multi-Theme System & Style Settings**: Added visual style switcher and theme settings modal supporting 4 distinct tabletop aesthetics:
+  - **Whimsical Fey & Goblin (Default)**: Deep mossy green, enchanted forest glow, warm mushroom gold, fairytale headings (`MedievalSharp`).
+  - **Inked Parchment & Tavern Scroll**: Sepia & tea-stained parchment, candlelight amber accents, inked borders, antique serif typography (`Almendra`).
+  - **Classic Obsidian & Dungeon**: Dark stone palette, gothic amber & crimson ruby highlights, authoritative headings (`Cinzel`).
+  - **Astral Sea & Spellbook**: Midnight celestial indigo, arcane violet nebulae, glowing starlight cyan runes.
+- **Theme Switcher Pill**: Quick theme switcher badge in the top navigation header displaying the active style icon and name, with one-click access to the style picker dialog.
+- **Appearance & Styles Menu Option**: Added direct entry point in the More Options dropdown to open the visual style settings modal.
+- **Theme Persistence**: Theme preferences are automatically preserved across sessions via local storage.
+
 ---
 
 ## [0.2.1] - 2026-10-05

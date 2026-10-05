@@ -26,6 +26,13 @@ Dungeons & Dragons Notebook helps you organize your games. It keeps track of cam
 - **Parent-Child Hierarchy**: Organize regions into settlements, settlements into buildings, factions into branches, etc.
 - **Family Trees**: Dedicated genealogical tree generation for families, dynasties, and lineages.
 
+### 4. Visual Styles & Multi-Theme Settings
+- **Whimsical Fey & Goblin (Default)**: Organic tabletop fantasy theme inspired by Goblin's Notebook, with moss greens, bioluminescent teal glow, warm mushroom amber, and fairytale typography (`MedievalSharp`).
+- **Inked Parchment & Tavern Scroll**: Warm sepia and tea-stained antique scroll aesthetic with candlelit accents and medieval typography (`Almendra`).
+- **Classic Obsidian & Dungeon**: Dark stone slate with gothic amber and crimson highlights (`Cinzel`).
+- **Astral Sea & Spellbook**: Deep midnight celestial indigo with starlight cyan and arcane violet runes.
+- **Theme Switcher**: Quick toggle badge in the header and Appearance & Styles settings dialog accessible from the options menu, with persistent local storage.
+
 ### 5. Entry Metadata & Status Tracking
 - Structured metadata fields for quick identification.
 - Friendly/Hostile/Neutral alignment tracking.

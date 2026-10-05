@@ -33,8 +33,17 @@
       dragStartY: 0,
       nodes: [],
       links: []
-    }
+    },
+    theme: 'whimsical'
   };
+
+  // Predefined Visual Styles & Themes
+  const THEMES = [
+    { id: 'whimsical', name: 'Whimsical Fey', icon: '🍄', class: 'theme-whimsical' },
+    { id: 'parchment', name: 'Inked Scroll', icon: '📜', class: 'theme-parchment' },
+    { id: 'obsidian', name: 'Obsidian Dungeon', icon: '⚔️', class: 'theme-obsidian' },
+    { id: 'astral', name: 'Astral Sea', icon: '✨', class: 'theme-astral' }
+  ];
 
   // Predefined Categories
   const DEFAULT_CATEGORIES = [
@@ -69,7 +78,15 @@
     el.importFileInput = document.getElementById('importFileInput');
     el.manageCharactersBtn = document.getElementById('manageCharactersBtn');
     el.addCategoryBtn = document.getElementById('addCategoryBtn');
+    el.openThemeSettingsBtn = document.getElementById('openThemeSettingsBtn');
     el.resetDataBtn = document.getElementById('resetDataBtn');
+
+    // Theme Switcher & Modal
+    el.themeSwitcherBtn = document.getElementById('themeSwitcherBtn');
+    el.themeBtnIcon = document.getElementById('themeBtnIcon');
+    el.themeBtnLabel = document.getElementById('themeBtnLabel');
+    el.themeSettingsModal = document.getElementById('themeSettingsModal');
+    el.themeSelectCards = document.querySelectorAll('.theme-select-card');
 
     // Temporary Notepad Banner
     el.tempNotepadBanner = document.getElementById('tempNotepadBanner');
@@ -312,9 +329,37 @@
     }
   };
 
+  // --- THEME & VISUAL STYLES ---
+  function setTheme(themeId) {
+    const theme = THEMES.find(t => t.id === themeId) || THEMES[0];
+    state.theme = theme.id;
+    localStorage.setItem('dnd_notebook_theme', theme.id);
+
+    // Apply class to body
+    THEMES.forEach(t => document.body.classList.remove(t.class));
+    document.body.classList.add(theme.class);
+
+    // Update Header Pill
+    if (el.themeBtnIcon) el.themeBtnIcon.textContent = theme.icon;
+    if (el.themeBtnLabel) el.themeBtnLabel.textContent = theme.name;
+
+    // Update Selected Tag in Modal
+    if (el.themeSelectCards) {
+      el.themeSelectCards.forEach(card => {
+        card.classList.toggle('selected', card.dataset.themeId === theme.id);
+      });
+    }
+  }
+
+  function initTheme() {
+    const savedTheme = localStorage.getItem('dnd_notebook_theme') || 'whimsical';
+    setTheme(savedTheme);
+  }
+
   // --- INITIALIZATION ---
   async function init() {
     initElements();
+    initTheme();
     setupEventListeners();
     await loadInitialData();
   }
@@ -1928,6 +1973,28 @@
       el.categoryModal.style.display = 'none';
       updateCategoryFilters();
     });
+
+    // Theme Switcher & Settings Modal
+    if (el.themeSwitcherBtn) {
+      el.themeSwitcherBtn.addEventListener('click', () => {
+        el.themeSettingsModal.style.display = 'flex';
+      });
+    }
+
+    if (el.openThemeSettingsBtn) {
+      el.openThemeSettingsBtn.addEventListener('click', () => {
+        el.optionsDropdown.classList.remove('show');
+        el.themeSettingsModal.style.display = 'flex';
+      });
+    }
+
+    if (el.themeSelectCards) {
+      el.themeSelectCards.forEach(card => {
+        card.addEventListener('click', () => {
+          setTheme(card.dataset.themeId);
+        });
+      });
+    }
 
     // Backup & Settings
     el.optionsMenuBtn.addEventListener('click', e => {
