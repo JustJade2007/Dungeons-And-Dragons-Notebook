@@ -11,9 +11,9 @@ app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
 // Determine base and data directory
-const isPackaged = !process.execPath.toLowerCase().endsWith('node.exe');
-const appRoot = isPackaged ? path.dirname(process.execPath) : __dirname;
-const dataDir = path.join(appRoot, 'data');
+const isPackaged = !process.execPath.toLowerCase().endsWith('node.exe') && !process.execPath.toLowerCase().endsWith('electron.exe');
+const appRoot = process.env.APP_DATA_DIR ? path.dirname(process.env.APP_DATA_DIR) : (isPackaged ? path.dirname(process.execPath) : __dirname);
+const dataDir = process.env.APP_DATA_DIR || path.join(appRoot, 'data');
 const dataFilePath = path.join(dataDir, 'notebook-data.json');
 
 // Ensure data directory exists
@@ -747,14 +747,14 @@ function findAppBrowserExecutable() {
     const localAppData = process.env['LocalAppData'] || '';
 
     const candidates = [
-      path.join(progFilesX86, 'Microsoft\\Edge\\Application\\msedge.exe'),
-      path.join(progFiles, 'Microsoft\\Edge\\Application\\msedge.exe'),
-      path.join(localAppData, 'Microsoft\\Edge\\Application\\msedge.exe'),
       path.join(progFiles, 'Google\\Chrome\\Application\\chrome.exe'),
       path.join(progFilesX86, 'Google\\Chrome\\Application\\chrome.exe'),
       path.join(localAppData, 'Google\\Chrome\\Application\\chrome.exe'),
       path.join(progFiles, 'BraveSoftware\\Brave-Browser\\Application\\brave.exe'),
-      path.join(progFilesX86, 'BraveSoftware\\Brave-Browser\\Application\\brave.exe')
+      path.join(progFilesX86, 'BraveSoftware\\Brave-Browser\\Application\\brave.exe'),
+      path.join(progFiles, 'Microsoft\\Edge\\Application\\msedge.exe'),
+      path.join(progFilesX86, 'Microsoft\\Edge\\Application\\msedge.exe'),
+      path.join(localAppData, 'Microsoft\\Edge\\Application\\msedge.exe')
     ];
 
     for (const exePath of candidates) {
@@ -798,11 +798,8 @@ function launchAppWindow(url, onExit) {
         openSystemBrowser(url);
       });
 
-      child.on('exit', () => {
-        console.log('[Window] Application window closed by user.');
-        if (typeof onExit === 'function') {
-          onExit();
-        }
+      child.on('exit', code => {
+        console.log(`[Window] Browser launcher process exited with code ${code}.`);
       });
 
       return child;
@@ -853,11 +850,7 @@ function startServer(requestedPort = null, autoOpen = false) {
             if (forceWeb) {
               openSystemBrowser(url);
             } else {
-              launchAppWindow(url, () => {
-                if (isPackaged) {
-                  shutdown();
-                }
-              });
+              launchAppWindow(url);
             }
           }, 700);
         }

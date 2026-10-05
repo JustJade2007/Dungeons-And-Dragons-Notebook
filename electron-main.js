@@ -37,6 +37,8 @@ async function initializeApp() {
 
     if (isHeadless) {
       console.log(`[Desktop App] Headless test mode active at: ${appUrl}`);
+      // Keep event loop alive for headless tests
+      setInterval(() => {}, 10000);
       return;
     }
 

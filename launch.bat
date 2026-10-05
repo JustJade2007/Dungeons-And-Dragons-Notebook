@@ -29,10 +29,11 @@ if not exist "node_modules\" (
     )
 )
 
-echo [INFO] Launching D&D Notebook application...
-echo [INFO] Press Ctrl+C in this console window to terminate the application.
-echo.
-
-call npm start
+echo [INFO] Launching D&D Notebook desktop application...
+call npx electron electron-main.js
+if %ERRORLEVEL% neq 0 (
+    echo [INFO] Falling back to local server...
+    call node server.js
+)
 
 pause

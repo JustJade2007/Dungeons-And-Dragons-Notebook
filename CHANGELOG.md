@@ -33,6 +33,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Expanded test suites in `tests/verify-app.js` and `tests/verify-exe.js` with comprehensive chapter filtering, auto-saved date, and session CRUD tests (16/16 tests passing).
   - Rebuilt and certified standalone binary `dist/dnd-notebook.exe`.
 
+### Fixed
+- **Premature Server Shutdown Bug**: Fixed an issue where the launcher process exit event was prematurely calling `shutdown()`, immediately terminating the background HTTP server when the browser detached and resulting in `ERR_CONNECTION_REFUSED` (`localhost refused to connect`).
+- **Dedicated Application Window Priority**: Updated browser search order in `findAppBrowserExecutable()` to prioritize Google Chrome and dedicated Chromium window wrappers, preventing unwanted Edge fallback.
+- **Native Desktop Launcher**: Updated `launch.bat` to launch the native Electron desktop application window directly via `electron electron-main.js` with graceful fallback to the local server.
+
 ### Added
 - **Dedicated Full-Page Startup Home**: Replaced the dismissible startup modal with a dedicated, top-level Home Page (`#homePage`) displayed by default upon launching the app or website.
 - **Mandatory Notebook Selection Gateway**: Prevents unselected/empty notebook states by requiring the user to choose one of three explicit paths before entering the workspace:

@@ -2,7 +2,7 @@
   "name": "dungeons-and-dragons-notebook",
   "version": "0.2.6",
   "description": "A comprehensive note-taking and organization tool tailored for tabletop role-playing games and narrative-heavy campaigns.",
-  "main": "server.js",
+  "main": "electron-main.js",
   "type": "commonjs",
   "scripts": {
     "start": "node server.js",
